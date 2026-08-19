@@ -3,287 +3,1535 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>進擊的情人節：極限後頸斬擊任務</title>
+    <title>進擊的情人節：極限後頸斬擊</title>
     <style>
-        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: sans-serif; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
-
-        /* HUD 介面 */
-        .hud-panel {
-            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            width: 85%; max-width: 420px; background: rgba(15, 15, 20, 0.85);
-            border: 2px solid rgba(212, 175, 55, 0.8); border-radius: 12px;
-            padding: 10px 16px; display: flex; flex-direction: column; align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 10;
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
         }
-        .hud-title { color: #d4af37; font-size: 11px; font-weight: 800; letter-spacing: 2px; margin-bottom: 4px; }
-        .hp-bar-outer { width: 100%; height: 16px; background: #2a0808; border-radius: 8px; border: 1px solid #7f1d1d; overflow: hidden; }
-        .hp-bar-inner { width: 100%; height: 100%; background: linear-gradient(90deg, #dc2626, #f87171); transition: width 0.2s ease-out; }
-        #hit-hint { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); color: #ff4444; font-weight: 900; font-size: 18px; text-shadow: 0 0 10px #000; display: none; z-index: 10; }
 
-        /* 操作控制 */
-        #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; z-index: 20; touch-action: none; }
-        .joystick-base { width: 100%; height: 100%; border-radius: 50%; background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(255, 255, 255, 0.4); }
-        .joystick-stick { position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: #d4af37; border: 2px solid #fff; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", Roboto, sans-serif;
+            position: fixed;
+            inset: 0;
+            -webkit-touch-callout: none;
+        }
 
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+        }
+
+        /* 頂部 HUD */
+        .hud-panel {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 82%;
+            max-width: 420px;
+            background: rgba(15, 15, 20, 0.82);
+            border: 2px solid rgba(212, 175, 55, 0.75);
+            border-radius: 12px;
+            padding: 7px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+        .hud-title {
+            color: #d4af37;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin-bottom: 4px;
+        }
+        .hp-bar-outer {
+            width: 100%;
+            height: 14px;
+            background: #2a0808;
+            border-radius: 7px;
+            border: 1px solid #7f1d1d;
+            overflow: hidden;
+        }
+        .hp-bar-inner {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #dc2626, #f87171);
+            transition: width 0.18s ease-out;
+        }
+        .hud-hp {
+            color: #fca5a5;
+            font-size: 10px;
+            font-weight: 700;
+            margin-top: 3px;
+            letter-spacing: 1px;
+        }
+
+        /* 操作提示 */
+        .hint-pill {
+            position: absolute;
+            bottom: 172px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.58);
+            color: #eee;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            z-index: 15;
+            white-space: nowrap;
+            transition: opacity 1s, border-color 0.3s, color 0.3s;
+            pointer-events: none;
+        }
+        .hint-pill.ready {
+            border-color: #f87171;
+            color: #fecaca;
+            animation: hintPulse 0.85s infinite;
+        }
+        @keyframes hintPulse {
+            50% { box-shadow: 0 0 20px rgba(248, 113, 113, 0.65); }
+        }
+
+        /* 搖桿 */
+        #joystick-zone {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 128px;
+            height: 128px;
+            z-index: 20;
+            touch-action: none;
+        }
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(4px);
+        }
+        .joystick-stick {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #d4af37 0%, #8b5a00 100%);
+            border: 2px solid #ffea9f;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+            transform: translate(-50%, -50%);
+            will-change: transform;
+        }
+
+        /* 斬擊鍵 */
         #btn-attack {
-            position: absolute; bottom: 35px; right: 35px; width: 85px; height: 85px; border-radius: 50%;
-            background: radial-gradient(circle, #991b1b 0%, #450a0a 100%); border: 3px solid #f87171;
-            color: #fff; font-weight: 900; display: flex; flex-direction: column; justify-content: center; align-items: center;
-            box-shadow: 0 0 20px rgba(185, 28, 28, 0.8); z-index: 20; touch-action: none;
+            position: absolute;
+            bottom: 35px;
+            right: 35px;
+            width: 82px;
+            height: 82px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #991b1b 0%, #450a0a 100%);
+            border: 3px solid #f87171;
+            color: #fff;
+            font-weight: 800;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(185, 28, 28, 0.7);
+            z-index: 20;
+            touch-action: none;
+            transition: opacity 0.2s;
         }
         #btn-attack:active { transform: scale(0.92); }
+        #btn-attack.cooling { opacity: 0.55; }
 
-        /* 勝利禮物彈窗 */
+        /* 勝利禮物彈窗（金屬質感兌換券） */
         #coupon-overlay {
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(8px); z-index: 100;
-            justify-content: center; align-items: center;
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
         }
         .coupon-card {
-            width: 85%; max-width: 360px; background: linear-gradient(145deg, #1f1a14 0%, #2a2218 100%);
-            border: 2px solid #d4af37; border-radius: 16px; padding: 25px 20px; text-align: center; color: #f3f4f6;
-            box-shadow: 0 0 35px rgba(212, 175, 55, 0.5); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 86%;
+            max-width: 360px;
+            background:
+                linear-gradient(160deg, rgba(255, 248, 220, 0.12), rgba(120, 90, 20, 0.12)),
+                linear-gradient(145deg, #2a2318 0%, #171310 100%);
+            border: 2px solid;
+            border-image: linear-gradient(135deg, #f5d97a, #a07c2e 40%, #f5e6b0 60%, #8a6a24) 1;
+            border-radius: 16px;
+            padding: 26px 20px 22px;
+            text-align: center;
+            color: #f3f4f6;
+            box-shadow: 0 0 45px rgba(212, 175, 55, 0.45), inset 0 0 30px rgba(0, 0, 0, 0.6);
+            position: relative;
         }
-        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .coupon-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f5d97a, #b8912f);
+            color: #231a05;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            padding: 3px 12px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .coupon-card h2 {
+            color: #fef08a;
+            font-size: 19px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 14px rgba(254, 240, 138, 0.5);
+        }
+        .coupon-card p.desc {
+            font-size: 12px;
+            color: #ccc;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+        .coupon-voucher {
+            background: rgba(212, 175, 55, 0.1);
+            border: 2px dashed #d4af37;
+            border-radius: 10px;
+            padding: 18px 12px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .coupon-voucher .main {
+            font-size: 20px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+        .coupon-voucher .sub {
+            font-size: 11px;
+            color: #e8d9a8;
+            margin-top: 6px;
+        }
+        .stamp {
+            position: absolute;
+            right: 12px;
+            top: 14px;
+            transform: rotate(12deg);
+            border: 2px solid rgba(248, 113, 113, 0.85);
+            color: #f87171;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 900;
+            padding: 3px 7px;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+        .coupon-card .footer {
+            font-size: 10px;
+            color: #a89a70;
+            line-height: 1.7;
+        }
+        #btn-restart {
+            margin-top: 14px;
+            background: linear-gradient(145deg, #991b1b 0%, #450a0a 100%);
+            color: #fff;
+            border: 2px solid #f87171;
+            border-radius: 12px;
+            padding: 10px 26px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        #btn-restart:active { transform: scale(0.95); }
+
+        /* 飄浮文字 */
+        .dmg-text {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-weight: 900;
+            font-size: 17px;
+            color: #fff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+            pointer-events: none;
+            z-index: 40;
+            white-space: nowrap;
+        }
+
+        /* 錯誤日誌（開發用，正常不顯示） */
+        #errlog {
+            display: none;
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            color: #ff6666;
+            font-size: 10px;
+            z-index: 200;
+            max-width: 60%;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 8px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            pointer-events: none;
+        }
     </style>
+
+    <!-- Three.js r128（多 CDN 備援） -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>window.THREE || document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');</script>
 </head>
 <body>
 
 <div id="canvas-container"></div>
-<div id="hit-hint">⚔️ 無效攻擊！必須繞到後頸弱點！</div>
 
 <div class="hud-panel">
-    <div class="hud-title">TARGET: 鎧之巨人 (TARGET NAPE NAPE ONLY)</div>
-    <div class="hp-bar-outer"><div id="hp-bar" class="hp-bar-inner"></div></div>
+    <div class="hud-title">TARGET: 後頸 (NAPE ONLY)</div>
+    <div class="hp-bar-outer">
+        <div id="hp-bar" class="hp-bar-inner"></div>
+    </div>
+    <div class="hud-hp">HP <span id="hp-num">100</span> / 100</div>
 </div>
 
-<div id="joystick-zone"><div class="joystick-base"></div><div id="joystick-stick" class="joystick-stick"></div></div>
-<div id="btn-attack"><span style="font-size: 22px;">⚔️</span><div style="font-size: 11px;">斬擊後頸</div></div>
+<div id="hint-pill" class="hint-pill">🕹️ 繞到巨人背後 ⚔️ 斬擊後頸弱點！</div>
+
+<div id="joystick-zone">
+    <div class="joystick-base"></div>
+    <div id="joystick-stick" class="joystick-stick"></div>
+</div>
+
+<div id="btn-attack">
+    <span style="font-size: 20px;">⚔️</span>
+    <div style="font-size: 10px;">斬擊</div>
+</div>
 
 <div id="coupon-overlay">
     <div class="coupon-card">
-        <div style="background:#d4af37; color:#111; font-size:10px; font-weight:800; padding:4px 12px; border-radius:12px; display:inline-block; margin-bottom:10px;">MISSION ACCOMPLISHED</div>
-        <h2 style="color:#fef08a; font-size:20px; margin-bottom:10px;">🌹 專屬情人節禮物卡 🌹</h2>
-        <p style="font-size:13px; color:#ccc; margin-bottom:15px;">成功精準斬殺巨人後頸！守護了我們的和平！</p>
-        <div style="background:rgba(212,175,55,0.15); border:2px dashed #d4af37; border-radius:10px; padding:15px; margin-bottom:15px;">
-            <div style="font-size:22px; font-weight:900; color:#fff;">［ 任意大餐 / 願望兌換券 ］</div>
+        <div class="coupon-badge">VICTORY 戰利品</div>
+        <h2>🌹 專屬情人節兌換券 🌹</h2>
+        <p class="desc">成功討伐鎧之巨人！<br>你打開了 3D 禮物，獲得專屬願望兌換券！</p>
+        <div class="coupon-voucher">
+            <div class="stamp">永遠有效</div>
+            <div class="main">［ 任意願望兌換券 ］</div>
+            <div class="sub">✦ 憑此券可向專屬艾連兌換浪漫大餐或任意願望 ✦</div>
         </div>
-        <p style="font-size:11px; color:#aaa;">✦ 憑此畫面可向專屬艾連兌換任意願望 ✦<br>【 有效期：永遠有效 】</p>
+        <div class="footer">有效期：永遠有效（僅限一人使用，不可轉讓）</div>
+        <button id="btn-restart">🔁 再挑戰一次</button>
     </div>
 </div>
 
+<div id="errlog"></div>
+
 <script>
-    // --- 1. Three.js 場景建置 ---
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x739bd0);
-    scene.fog = new THREE.FogExp2(0x739bd0, 0.012);
+'use strict';
 
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    document.getElementById('canvas-container').appendChild(renderer.domElement);
+/* ================= 工具 ================= */
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xfffaed, 0.8);
-    dirLight.position.set(30, 50, 30);
-    dirLight.castShadow = true;
-    scene.add(dirLight);
+/* 錯誤日誌（任何 JS 例外會顯示在畫面角落，方便開發測試） */
+const errlog = document.getElementById('errlog');
+window.addEventListener('error', (e) => {
+    errlog.style.display = 'block';
+    errlog.textContent += e.message + '\n';
+});
 
-    // --- 2. 建立地圖環境 (城牆與草地) ---
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshLambertMaterial({ color: 0x2e4c1e }));
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    scene.add(ground);
+/* ================= 遊戲狀態 ================= */
+let titanHp = 100;
+const NAPE_DMG = 40;                 // 每次致命一擊傷害 → 3 次擊倒（PRD: 2~3 次）
+let isGameOver = false;
+let deathT = 0;
+let impactShook = false;
+let giftSpawned = false;
+let giftOpened = false;
+let staggerT = 0;
+let swingT = 0;
+let arcT = 0;
+let flashT = 0;
+let shake = 0;
+let timeScale = 1;
+let fovBoost = 0;
+let flightState = null;
+let lastLaunch = 0;
+const LAUNCH_COOLDOWN = 1.4;
+const LAUNCH_RANGE = 20;
+const NAPE_Y = 11.8;                 // 後頸高度（判定：Y >= 5.0）
+const BEHIND_DOT = -0.7071;          // 背後 ±45° → dot <= cos(135°)
 
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(300, 60, 15), new THREE.MeshLambertMaterial({ color: 0x5a5551 }));
-    wall.position.set(0, 30, -80);
-    scene.add(wall);
+/* ================= Three.js 場景 ================= */
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.FogExp2(0x87ceeb, 0.0075);
 
-    // --- 3. 角色與巨人建置 ---
-    // 艾連
-    const player = new THREE.Group();
-    const pBody = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.4, 1.4), new THREE.MeshLambertMaterial({ color: 0x7c4a03 }));
-    pBody.position.y = 0.7;
-    player.add(pBody);
-    const cape = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.2, 8), new THREE.MeshLambertMaterial({ color: 0x113813 }));
-    cape.position.set(0, 1, -0.2); cape.rotation.x = 0.4;
-    player.add(cape);
-    scene.add(player);
-    player.position.set(0, 0, 15);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 7.5, 16);
 
-    // 鎧之巨人
-    const titan = new THREE.Group();
-    const tBody = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2, 8), new THREE.MeshLambertMaterial({ color: 0x9a3412 }));
-    tBody.position.y = 4; titan.add(tBody);
-    const tHead = new THREE.Mesh(new THREE.SphereGeometry(1.5), new THREE.MeshLambertMaterial({ color: 0xd97706 }));
-    tHead.position.y = 9; titan.add(tHead);
+let renderer;
+try {
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch (e) {
+    document.body.innerHTML = '<div style="color:#fff;text-align:center;padding-top:40vh;font-size:16px;">此裝置不支援 WebGL，無法執行 3D 場景 😢</div>';
+    throw e;
+}
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+container.appendChild(renderer.domElement);
 
-    // 🌟 後頸弱點 (紅色標記區)
-    const napeGeo = new THREE.BoxGeometry(1.2, 1.2, 0.5);
-    const napeMat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: false });
-    const napeMesh = new THREE.Mesh(napeGeo, napeMat);
-    napeMesh.position.set(0, 7.5, -2.1); // 精準部位在後頸
-    titan.add(napeMesh);
+scene.add(new THREE.AmbientLight(0xffffff, 0.42));
+scene.add(new THREE.HemisphereLight(0xbfd9ff, 0x334d12, 0.5));
 
-    scene.add(titan);
-    titan.position.set(0, 0, -20);
+const dirLight = new THREE.DirectionalLight(0xfffaed, 0.9);
+dirLight.position.set(40, 70, 30);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(1024, 1024);
+dirLight.shadow.camera.left = -70;
+dirLight.shadow.camera.right = 70;
+dirLight.shadow.camera.top = 70;
+dirLight.shadow.camera.bottom = -70;
+dirLight.shadow.camera.near = 1;
+dirLight.shadow.camera.far = 250;
+scene.add(dirLight);
 
-    // --- 4. 精準後頸判定邏輯 (Core Logic) ---
-    let titanHP = 100;
-    let isGameOver = false;
+/* ================= 程式化貼圖 ================= */
+function makeGrassTexture() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = '#4c7a1f';
+    g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 900; i++) {
+        g.fillStyle = Math.random() < 0.5 ? 'rgba(120,170,60,0.45)' : 'rgba(30,60,10,0.45)';
+        g.fillRect(Math.random() * 128, Math.random() * 128, 1.6, 1.6);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(48, 48);
+    return tex;
+}
 
-    function checkNapeHit() {
-        // A. 距離判定：必須靠近巨人
-        const dist = player.position.distanceTo(titan.position);
-        if (dist > 7) return { hit: false, reason: "TOO_FAR" };
-
-        // B. 角度判定：判斷玩家是否在巨人正後方 (Dot Product)
-        const titanForward = new THREE.Vector3(0, 0, 1).applyQuaternion(titan.quaternion);
-        const playerDirection = new THREE.Vector3().subVectors(player.position, titan.position).normalize();
-        const dot = titanForward.dot(playerDirection); // 接近 -1 代表在正後方
-
-        // C. 高度判定：艾連必須處於空中/後頸高度
-        const relativeY = player.position.y - titan.position.y;
-        const isCorrectHeight = relativeY >= 4.0 && relativeY <= 9.0;
-
-        // 條件滿足：在後方 60 度角度內 (-0.5) 且高度正確
-        if (dot < -0.5 && isCorrectHeight) {
-            return { hit: true };
+function makeBrickTexture() {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = '#5a534b';
+    g.fillRect(0, 0, 256, 128);
+    const bw = 64, bh = 32;
+    for (let row = 0; row < 4; row++) {
+        const offset = row % 2 ? bw / 2 : 0;
+        for (let bx = -1; bx < 5; bx++) {
+            const shade = 0.82 + Math.random() * 0.35;
+            g.fillStyle = 'rgb(' + Math.round(139 * shade) + ',' + Math.round(129 * shade) + ',' + Math.round(122 * shade) + ')';
+            g.fillRect(bx * bw + offset, row * bh, bw - 5, bh - 5);
         }
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(8, 2);
+    return tex;
+}
 
-        return { hit: false, reason: "WRONG_ANGLE" };
+/* 自由之翼徽章 */
+function makeWingsTexture() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = '#f2efe6';
+    g.fillRect(0, 0, 128, 128);
+    g.fillStyle = '#2e6b34';
+    g.strokeStyle = '#1d4723';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(64, 70);
+    g.bezierCurveTo(30, 40, 8, 45, 6, 60);
+    g.bezierCurveTo(30, 66, 44, 74, 64, 86);
+    g.bezierCurveTo(84, 74, 98, 66, 122, 60);
+    g.bezierCurveTo(120, 45, 98, 40, 64, 70);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    g.strokeStyle = '#1d4723';
+    g.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+        g.beginPath(); g.moveTo(64, 76 + i * 2.5); g.lineTo(26 - i * 8, 58 - i * 2); g.stroke();
+        g.beginPath(); g.moveTo(64, 76 + i * 2.5); g.lineTo(102 + i * 8, 58 - i * 2); g.stroke();
+    }
+    g.fillStyle = '#1d4723';
+    g.beginPath(); g.arc(64, 76, 8, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#f2efe6';
+    g.beginPath(); g.arc(64, 76, 4, 0, Math.PI * 2); g.fill();
+    return new THREE.CanvasTexture(c);
+}
+
+/* 巨人肌肉紋理 */
+function makeMuscleTexture() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = '#c2410c';
+    g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 260; i++) {
+        g.strokeStyle = 'rgba(90, 25, 5, ' + rand(0.15, 0.5) + ')';
+        g.lineWidth = rand(1, 3);
+        const x = rand(0, 128), y = rand(0, 128), len = rand(12, 34), ang = rand(0, Math.PI);
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(ang) * len, y + Math.sin(ang) * len); g.stroke();
+    }
+    for (let i = 0; i < 120; i++) {
+        g.fillStyle = 'rgba(255, 140, 60, ' + rand(0.1, 0.35) + ')';
+        g.fillRect(rand(0, 128), rand(0, 128), rand(2, 6), rand(2, 6));
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+}
+
+/* 鎧甲板塊紋理 */
+function makeArmorTexture() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = '#f0b429';
+    g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 5; i++) {
+        const x = rand(-10, 90), y = rand(-10, 90), w = rand(40, 70), h = rand(20, 40);
+        g.fillStyle = 'rgba(150, 90, 10, 0.35)';
+        g.fillRect(x, y, w, h);
+        g.strokeStyle = 'rgba(255, 230, 150, 0.5)';
+        g.lineWidth = 2;
+        g.strokeRect(x, y, w, h);
+    }
+    for (let i = 0; i < 30; i++) {
+        g.strokeStyle = 'rgba(80, 45, 5, ' + rand(0.2, 0.6) + ')';
+        g.lineWidth = 1;
+        const x = rand(0, 128), y = rand(0, 128);
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + rand(-8, 8), y + rand(-6, 6)); g.stroke();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+}
+
+/* ================= 世界：大地、瑪利亞之牆、樹林、雲 ================= */
+const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(240, 240),
+    new THREE.MeshLambertMaterial({ map: makeGrassTexture() })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const wall = new THREE.Mesh(
+    new THREE.BoxGeometry(200, 22, 10),
+    new THREE.MeshLambertMaterial({ map: makeBrickTexture() })
+);
+wall.position.set(0, 11, -55);
+wall.castShadow = true;
+wall.receiveShadow = true;
+scene.add(wall);
+
+const wallMat2 = new THREE.MeshLambertMaterial({ color: 0x8a8177 });
+for (let i = -90; i < 90; i += 10) {
+    const crenel = new THREE.Mesh(new THREE.BoxGeometry(5, 4, 10), wallMat2);
+    crenel.position.set(i, 26, -55);
+    crenel.castShadow = true;
+    scene.add(crenel);
+}
+
+const treeMatTrunk = new THREE.MeshLambertMaterial({ color: 0x5b3a1a });
+const treeMatLeaf = new THREE.MeshLambertMaterial({ color: 0x2e5a1e });
+for (let i = 0; i < 14; i++) {
+    const x = rand(-78, 78), z = rand(-48, -12);
+    if (Math.abs(x) < 12 && z < -6) continue;
+    const s = rand(0.8, 1.7);
+    const tree = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 3, 6), treeMatTrunk);
+    trunk.position.y = 1.5;
+    const leaf1 = new THREE.Mesh(new THREE.ConeGeometry(2.4, 4, 7), treeMatLeaf);
+    leaf1.position.y = 4.5;
+    const leaf2 = new THREE.Mesh(new THREE.ConeGeometry(1.7, 3, 7), treeMatLeaf);
+    leaf2.position.y = 6.6;
+    tree.add(trunk, leaf1, leaf2);
+    tree.position.set(x, 0, z);
+    tree.scale.setScalar(s);
+    scene.add(tree);
+}
+
+const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+const clouds = [];
+for (let i = 0; i < 5; i++) {
+    const cloud = new THREE.Group();
+    for (let j = 0; j < 3; j++) {
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(rand(2, 3.5), 7, 6), cloudMat);
+        puff.position.set(j * rand(2.2, 3.2) - 3, rand(-0.4, 0.6), rand(-1, 1));
+        puff.scale.y = 0.45;
+        cloud.add(puff);
+    }
+    cloud.position.set(rand(-70, 70), rand(24, 30), rand(-75, -30));
+    cloud.userData.speed = rand(0.5, 1.5);
+    scene.add(cloud);
+    clouds.push(cloud);
+}
+
+/* ================= 艾連（詳細人形，程式化骨胳動畫） ================= */
+const player = new THREE.Group();
+const M = {};
+M.skin   = new THREE.MeshLambertMaterial({ color: 0xffdbac });
+M.jacket = new THREE.MeshLambertMaterial({ color: 0x7a5230 });
+M.pants  = new THREE.MeshLambertMaterial({ color: 0x4a3220 });
+M.boot   = new THREE.MeshLambertMaterial({ color: 0x2b231c });
+M.white  = new THREE.MeshLambertMaterial({ color: 0xf2efe6 });
+M.dark   = new THREE.MeshLambertMaterial({ color: 0x1f1f1f });
+M.silver = new THREE.MeshLambertMaterial({ color: 0xd8dee6 });
+M.blade  = new THREE.MeshLambertMaterial({ color: 0xdfe6ee });
+M.hair   = new THREE.MeshLambertMaterial({ color: 0x4a2f1b });
+M.belt   = new THREE.MeshLambertMaterial({ color: 0x3a2a18 });
+
+/* 腿（樞軸在髖部，走路擺動用） */
+const legL = new THREE.Group(); legL.position.set(-0.11, 0.78, 0);
+const legR = new THREE.Group(); legR.position.set(0.11, 0.78, 0);
+for (const [g, s] of [[legL, -1], [legR, 1]]) {
+    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.07, 0.42, 6), M.pants);
+    thigh.position.y = -0.21;
+    const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.05, 0.34, 6), M.pants);
+    shin.position.y = -0.58;
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.11, 0.26), M.boot);
+    boot.position.set(0, -0.79, 0.03);
+    g.add(thigh, shin, boot);
+}
+player.add(legL, legR);
+
+/* 臀部 + 腰帶 */
+const hips = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.13, 0.2), M.jacket);
+hips.position.set(0, 0.72, 0);
+player.add(hips);
+const belt = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.06, 0.22), M.belt);
+belt.position.set(0, 0.8, 0);
+player.add(belt);
+
+/* 立體機動裝置（腰間鋼瓶 + 刀柄） */
+for (const s of [-1, 1]) {
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.21, 0.11), M.dark);
+    box.position.set(0.19 * s, 0.79, 0.08);
+    player.add(box);
+    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.24), M.silver);
+    grip.position.set(0.19 * s, 0.93, 0.11);
+    player.add(grip);
+}
+
+/* 軀幹（棕夾克）+ 白襯衫 V 領 */
+const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.13, 0.56, 8), M.jacket);
+torso.position.set(0, 1.04, 0);
+player.add(torso);
+const shirt = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.105, 0.16, 8), M.white);
+shirt.position.set(0, 1.22, 0);
+player.add(shirt);
+
+/* 手臂（樞軸在肩膀，擺動用） */
+const armL = new THREE.Group(); armL.position.set(-0.2, 1.3, 0);
+const armR = new THREE.Group(); armR.position.set(0.2, 1.3, 0);
+for (const [g, s] of [[armL, -1], [armR, 1]]) {
+    const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.042, 0.36, 6), M.jacket);
+    upper.position.y = -0.18;
+    const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.3, 6), M.jacket);
+    fore.position.y = -0.48;
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.048, 6, 5), M.skin);
+    hand.position.set(0, -0.65, 0);
+    g.add(upper, fore, hand);
+}
+player.add(armL, armR);
+
+/* 頭：脖子、臉、髮（艾連） */
+const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.1, 6), M.skin);
+neck.position.set(0, 1.44, 0);
+player.add(neck);
+const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 10, 9), M.skin);
+head.position.set(0, 1.66, 0);
+player.add(head);
+/* 頭髮（上層 + 側面 + 瀏海） */
+const hairTop = new THREE.Mesh(new THREE.SphereGeometry(0.225, 9, 6), M.hair);
+hairTop.position.set(0, 1.78, -0.03);
+hairTop.scale.y = 0.62;
+player.add(hairTop);
+const hairSide = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.12, 0.3), M.hair);
+hairSide.position.set(0, 1.62, -0.06);
+player.add(hairSide);
+const fringe = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.08), M.hair);
+fringe.position.set(0, 1.74, 0.2);
+fringe.rotation.x = 0.25;
+player.add(fringe);
+/* 眼睛 + 眉毛 */
+const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1a1a1a });
+for (const s of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.026, 5, 5), eyeMat);
+    eye.position.set(0.075 * s, 1.67, 0.185);
+    player.add(eye);
+    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.018, 0.03), M.hair);
+    brow.position.set(0.075 * s, 1.71, 0.19);
+    player.add(brow);
+}
+
+/* 白斗篷（後半錐）+ 自由之翼徽章 */
+const cape = new THREE.Mesh(new THREE.ConeGeometry(0.44, 0.62, 10, 1, true, Math.PI, Math.PI), M.white);
+cape.position.set(0, 1.42, -0.17);
+cape.rotation.x = 0.55;
+cape.scale.set(1.15, 1, 0.95);
+cape.material.side = THREE.DoubleSide;
+player.add(cape);
+const wings = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.44, 0.34),
+    new THREE.MeshLambertMaterial({ map: makeWingsTexture(), side: THREE.DoubleSide })
+);
+wings.position.set(0, 1.34, -0.46);
+wings.rotation.x = -0.15;
+player.add(wings);
+
+/* 雙刀（刀身沿 +Z） */
+const blades = [];
+for (const s of [-1, 1]) {
+    const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.14, 5), M.dark);
+    hilt.position.set(0.27 * s, 1.06, 0.3);
+    hilt.rotation.x = Math.PI / 2;
+    player.add(hilt);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.045, 1.5), M.blade);
+    blade.position.set(0.27 * s, 1.06, 1.0);
+    player.add(blade);
+    blades.push(blade);
+}
+player.position.set(0, 0, 3);
+player.traverse(o => { if (o.isMesh) o.castShadow = true; });
+scene.add(player);
+
+/* 立體機動鋼索（飛行時顯示） */
+const wireMat = new THREE.LineBasicMaterial({ color: 0x222222 });
+const wire1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), wireMat);
+const wire2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), wireMat);
+wire1.visible = wire2.visible = false;
+scene.add(wire1, wire2);
+
+/* 斬擊刀光弧 */
+const arcMat = new THREE.MeshBasicMaterial({
+    color: 0x66ccff, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+});
+const arc = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.4, 26, 1, -0.7, 2.1), arcMat);
+arc.visible = false;
+scene.add(arc);
+
+/* ================= 鎧之巨人（肌肉 + 鎧甲 + 後頸弱點） ================= */
+const titan = new THREE.Group();
+const titanBob = new THREE.Group();
+titan.add(titanBob);
+const titanBodyMat = new THREE.MeshLambertMaterial({ map: makeMuscleTexture() });
+const armorMat = new THREE.MeshLambertMaterial({ map: makeArmorTexture(), emissive: 0x000000 });
+const napeMat = new THREE.MeshBasicMaterial({ color: 0xff2222 });
+const eyeGlowMat = new THREE.MeshBasicMaterial({ color: 0xccff44 });
+
+/* 腿：大腿 + 小腿 + 膝甲 + 腳 */
+for (const s of [-1, 1]) {
+    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.85, 3.4, 8), titanBodyMat);
+    thigh.position.set(1.5 * s, 2.1, 0);
+    titanBob.add(thigh);
+    const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.6, 3.0, 8), titanBodyMat);
+    shin.position.set(1.5 * s, 0.1, 0.05);
+    titanBob.add(shin);
+    const knee = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.7, 1.1), armorMat);
+    knee.position.set(1.5 * s, 3.2, 0.35);
+    titanBob.add(knee);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.7, 2.0), titanBodyMat);
+    foot.position.set(1.5 * s, 0.35, 0.7);
+    titanBob.add(foot);
+}
+/* 臀部 + 腰部鎧甲 */
+const tHips = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.5, 1.9), titanBodyMat);
+tHips.position.set(0, 4.4, 0);
+titanBob.add(tHips);
+/* 軀幹（上寬下窄的倒梯形肌肉） */
+const tTorso = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 2.2, 6.6, 9), titanBodyMat);
+tTorso.position.set(0, 8.4, 0);
+titanBob.add(tTorso);
+for (const s of [-1, 1]) {
+    const pec = new THREE.Mesh(new THREE.SphereGeometry(1.0, 8, 7), titanBodyMat);
+    pec.position.set(0.85 * s, 9.3, 1.6);
+    titanBob.add(pec);
+}
+/* 胸甲板（正面）+ 背甲（背面） */
+const tChest = new THREE.Mesh(new THREE.BoxGeometry(4.8, 2.9, 1.0), armorMat);
+tChest.position.set(0, 9.5, 2.2);
+titanBob.add(tChest);
+const tBack = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.6, 0.8), armorMat);
+tBack.position.set(0, 9.2, -2.1);
+titanBob.add(tBack);
+/* 肩甲 + 手臂 + 拳頭 */
+for (const s of [-1, 1]) {
+    const shoulder = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.6, 3.0), armorMat);
+    shoulder.position.set(3.1 * s, 11.9, 0);
+    titanBob.add(shoulder);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 7), armorMat);
+    cap.position.set(3.5 * s, 12.4, 0);
+    titanBob.add(cap);
+    const uArm = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.8, 3.6, 8), titanBodyMat);
+    uArm.position.set(3.9 * s, 10.3, 0);
+    uArm.rotation.z = 0.12 * s;
+    titanBob.add(uArm);
+    const fArm = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.6, 3.0, 8), titanBodyMat);
+    fArm.position.set(4.4 * s, 7.4, 0);
+    fArm.rotation.z = 0.18 * s;
+    titanBob.add(fArm);
+    const elbow = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.55, 0.8), armorMat);
+    elbow.position.set(4.5 * s, 8.7, 0);
+    titanBob.add(elbow);
+    const fist = new THREE.Mesh(new THREE.SphereGeometry(0.78, 8, 7), titanBodyMat);
+    fist.position.set(4.6 * s, 5.8, 0);
+    titanBob.add(fist);
+}
+/* 脖子 + 後頸弱點（紅色，唯一弱點） */
+const tNeck = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.15, 1.5, 8), titanBodyMat);
+tNeck.position.set(0, 13.6, 0);
+titanBob.add(tNeck);
+const nape = new THREE.Mesh(new THREE.SphereGeometry(0.7, 10, 9), napeMat);
+nape.position.set(0, 13.0, -1.3);
+titanBob.add(nape);
+/* 頭：鎧甲面罩 + 發光眼睛 + 下顎 + 眉脊 */
+const tHead = new THREE.Mesh(new THREE.SphereGeometry(1.5, 10, 9), armorMat);
+tHead.position.set(0, 15.3, 0.35);
+titanBob.add(tHead);
+const tJaw = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.95, 1.25), armorMat);
+tJaw.position.set(0, 14.5, 1.2);
+titanBob.add(tJaw);
+for (const s of [-1, 1]) {
+    const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.35, 0.28), armorMat);
+    cheek.position.set(0.78 * s, 15.4, 1.45);
+    titanBob.add(cheek);
+    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.24, 0.16), eyeGlowMat);
+    eye.position.set(0.75 * s, 15.6, 1.55);
+    titanBob.add(eye);
+}
+const brow = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.38, 0.55), armorMat);
+brow.position.set(0, 16.2, 1.3);
+titanBob.add(brow);
+
+titan.position.set(0, 0, -22);
+titan.traverse(o => { if (o.isMesh) o.castShadow = true; });
+scene.add(titan);
+
+const NAPE_OFFSET = new THREE.Vector3(0, 13.0, -1.3);
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+/* ================= 粒子系統 ================= */
+const PARTICLE_MAX = 70;
+const particleGeo = new THREE.BoxGeometry(0.17, 0.17, 0.17);
+const particles = [];
+function spawnParticles(origin, colors, count, speed, upward = 1) {
+    for (let i = 0; i < count; i++) {
+        let p = particles.find(x => x.dead);
+        if (!p) {
+            if (particles.length >= PARTICLE_MAX) break;
+            const mat = new THREE.MeshBasicMaterial({ transparent: true });
+            const mesh = new THREE.Mesh(particleGeo, mat);
+            mesh.visible = false;
+            scene.add(mesh);
+            p = { mesh, vel: new THREE.Vector3(), life: 0, maxLife: 1, dead: true };
+            particles.push(p);
+        }
+        p.mesh.material.color.setHex(colors[Math.floor(Math.random() * colors.length)]);
+        p.mesh.position.copy(origin);
+        p.mesh.position.x += rand(-0.4, 0.4);
+        p.mesh.position.y += rand(-0.4, 0.4);
+        p.mesh.position.z += rand(-0.4, 0.4);
+        p.vel.set(rand(-1, 1), rand(0.3, 1.5) * upward, rand(-1, 1)).multiplyScalar(speed);
+        p.life = 0;
+        p.maxLife = rand(0.45, 0.95);
+        p.mesh.userData.s = rand(0.6, 1.5);
+        p.dead = false;
+        p.mesh.visible = true;
+    }
+}
+
+/* ================= 飄浮文字 ================= */
+const ftList = [];
+function addFloatingText(worldPos, text, color, size) {
+    const el = document.createElement('div');
+    el.className = 'dmg-text';
+    el.textContent = text;
+    el.style.color = color;
+    el.style.fontSize = size + 'px';
+    document.body.appendChild(el);
+    ftList.push({ el, pos: worldPos.clone(), ttl: 1.0 });
+}
+
+/* ================= 音效（WebAudio 合成） ================= */
+let AC = null;
+function ensureAudio() {
+    try {
+        if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+        if (AC.state === 'suspended') AC.resume();
+    } catch (e) {}
+}
+function tone(freq, dur, type, vol, slideTo, delay = 0) {
+    if (!AC) return;
+    try {
+        const t = AC.currentTime + delay;
+        const o = AC.createOscillator(), g = AC.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, t);
+        if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(AC.destination);
+        o.start(t); o.stop(t + dur + 0.05);
+    } catch (e) {}
+}
+function sAnchor()  { tone(1100, 0.09, 'sawtooth', 0.07, 220); tone(880, 0.09, 'square', 0.05, 180, 0.04); }
+function sWhoosh()  { tone(280, 0.28, 'sawtooth', 0.06, 1000); }
+function sCrit()    { tone(150, 0.32, 'sawtooth', 0.2, 42); tone(110, 0.4, 'square', 0.12, 38); tone(900, 0.1, 'sawtooth', 0.08, 300); }
+function sDeflect() { tone(900, 0.09, 'square', 0.12, 420); tone(1500, 0.14, 'sine', 0.06, 700); }
+function sGift()    { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.22, 'triangle', 0.12, null, i * 0.09)); }
+function sWin()     { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.3, 'triangle', 0.14, null, i * 0.11)); }
+
+/* ================= UI ================= */
+const hpBar = document.getElementById('hp-bar');
+const hpNum = document.getElementById('hp-num');
+const hintPill = document.getElementById('hint-pill');
+const couponOverlay = document.getElementById('coupon-overlay');
+const btnAttack = document.getElementById('btn-attack');
+
+/* ================= 搖桿（Pointer Events：滑鼠+觸控） ================= */
+const joystickZone = document.getElementById('joystick-zone');
+const joystickStick = document.getElementById('joystick-stick');
+let joystickVector = { x: 0, y: 0 };
+let activeJoystickPointer = null;
+let joystickCenter = { x: 0, y: 0 };
+
+joystickZone.addEventListener('pointerdown', (e) => {
+    if (activeJoystickPointer !== null) return;
+    ensureAudio();
+    activeJoystickPointer = e.pointerId;
+    const rect = joystickZone.getBoundingClientRect();
+    joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    try { joystickZone.setPointerCapture(e.pointerId); } catch (err) {}
+    updateJoystick(e.clientX, e.clientY);
+    e.preventDefault();
+});
+joystickZone.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== activeJoystickPointer) return;
+    updateJoystick(e.clientX, e.clientY);
+});
+function endJoystick(e) {
+    if (e.pointerId !== activeJoystickPointer) return;
+    activeJoystickPointer = null;
+    joystickVector = { x: 0, y: 0 };
+    joystickStick.style.transform = 'translate(-50%, -50%)';
+}
+joystickZone.addEventListener('pointerup', endJoystick);
+joystickZone.addEventListener('pointercancel', endJoystick);
+
+function updateJoystick(cx, cy) {
+    const dx = cx - joystickCenter.x;
+    const dy = cy - joystickCenter.y;
+    const dist = Math.hypot(dx, dy);
+    const maxDist = 45;
+    const d = Math.min(dist, maxDist);
+    const mx = (dx / (dist || 1)) * d;
+    const my = (dy / (dist || 1)) * d;
+    joystickStick.style.transform = 'translate(calc(-50% + ' + mx + 'px), calc(-50% + ' + my + 'px))';
+    joystickVector = { x: mx / maxDist, y: my / maxDist };
+}
+
+/* ================= 鍵盤 ================= */
+const keys = {};
+window.addEventListener('keydown', (e) => {
+    keys[e.code] = true;
+    if (e.code === 'Space' || e.code === 'KeyJ') { e.preventDefault(); attack(); }
+});
+window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+window.addEventListener('contextmenu', (e) => e.preventDefault());
+btnAttack.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    ensureAudio();
+    attack();
+});
+
+/* ================= 3D 禮物盒 ================= */
+const gift = new THREE.Group();
+gift.visible = false;
+const giftBoxMat = new THREE.MeshPhongMaterial({ color: 0xc0392b, shininess: 90, specular: 0x884433 });
+const giftRibbonMat = new THREE.MeshPhongMaterial({ color: 0xffd700, shininess: 120, specular: 0xfff0a0 });
+const giftBox = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.2, 1.6), giftBoxMat);
+gift.add(giftBox);
+const rib1 = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.14, 0.22), giftRibbonMat);
+const rib2 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 1.66), giftRibbonMat);
+gift.add(rib1, rib2);
+const lid = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.26, 1.72), giftRibbonMat);
+lid.position.y = 0.7;
+gift.add(lid);
+const bow1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.2), giftRibbonMat);
+bow1.position.set(-0.22, 0.95, 0); bow1.rotation.y = 0.5;
+const bow2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.5), giftRibbonMat);
+bow2.position.set(0.22, 0.95, 0); bow2.rotation.y = 0.5;
+const knot = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 5), giftRibbonMat);
+knot.position.y = 0.95;
+gift.add(bow1, bow2, knot);
+const giftLight = new THREE.PointLight(0xffaa55, 1.1, 14);
+giftLight.position.y = 2;
+gift.add(giftLight);
+const beamMat = new THREE.MeshBasicMaterial({
+    color: 0xffe9a0, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+});
+const beam = new THREE.Mesh(new THREE.ConeGeometry(2.4, 7, 16, 1, true), beamMat);
+beam.position.y = 3.6;
+gift.add(beam);
+const sparkles = [];
+const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+for (let i = 0; i < 10; i++) {
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), sparkMat);
+    sp.userData.a = (i / 10) * Math.PI * 2;
+    sp.userData.r = rand(1.3, 2.0);
+    sp.userData.spd = rand(1, 2.2) * (i % 2 ? 1 : -1);
+    gift.add(sp);
+    sparkles.push(sp);
+}
+scene.add(gift);
+
+let giftState = 'none';
+let giftT = 0;
+
+function spawnGift() {
+    gift.visible = true;
+    giftState = 'falling';
+    giftT = 0;
+    gift.position.set(titan.position.x, 18, titan.position.z - 4);
+    gift.rotation.set(0, 0, 0);
+    lid.position.y = 0.7;
+    beam.material.opacity = 0;
+    addFloatingText(gift.position.clone().add(new THREE.Vector3(0, 2, 0)), '🎁 3D 禮物掉下來了！', '#ffd700', 20);
+}
+
+function updateGift(dt, t) {
+    if (giftState === 'none') return;
+    if (giftState === 'falling') {
+        giftT += dt;
+        gift.position.y = Math.max(0, 18 - giftT * 20);
+        gift.rotation.y += dt * 3;
+        gift.rotation.z = Math.sin(giftT * 10) * 0.15;
+        if (gift.position.y <= 0) {
+            gift.position.y = 0;
+            giftState = 'idle';
+            giftT = 0;
+            spawnParticles(gift.position.clone().add(new THREE.Vector3(0, 0.2, 0)), [0x8a7a5a, 0xffd700, 0xc0392b], 12, 3.5);
+            sGift();
+        }
+    } else if (giftState === 'idle') {
+        giftT += dt;
+        gift.position.y = Math.abs(Math.sin(giftT * 1.6)) * 0.25;
+        gift.rotation.y += dt * 0.9;
+        const d = Math.hypot(player.position.x - gift.position.x, player.position.z - gift.position.z);
+        if (d < 4.5) {
+            giftState = 'opening';
+            giftT = 0;
+            sGift();
+        }
+    } else if (giftState === 'opening') {
+        giftT += dt;
+        lid.position.y = 0.7 + giftT * 4;
+        gift.rotation.y += dt * 1.5;
+        beam.material.opacity = Math.min(1, giftT * 2) * Math.max(0, 1 - giftT / 2.2);
+        beam.scale.setScalar(1 + giftT * 0.6);
+        if (giftT < 1.2) {
+            spawnParticles(gift.position.clone().add(new THREE.Vector3(0, 1.2, 0)), [0xff4d6d, 0xffd700, 0xfff0f5, 0xffffff], 3, 4.5);
+        }
+        if (giftT > 1.4 && !giftOpened) {
+            giftOpened = true;
+            couponOverlay.style.display = 'flex';
+            sWin();
+            spawnParticles(gift.position.clone().add(new THREE.Vector3(0, 1.5, 0)), [0xff4d6d, 0xffd700, 0xfff0f5, 0xffffff], 40, 6);
+        }
+        if (giftT > 2.5) giftState = 'opened';
+    } else {
+        gift.rotation.y += dt * 1.2;
+        gift.position.y = Math.abs(Math.sin(t * 1.6)) * 0.25;
+    }
+    sparkles.forEach(sp => {
+        sp.userData.a += sp.userData.spd * dt;
+        sp.position.set(
+            Math.cos(sp.userData.a) * sp.userData.r,
+            gift.position.y + 0.6 + Math.sin(t * 3 + sp.userData.a) * 0.35,
+            Math.sin(sp.userData.a) * sp.userData.r
+        );
+    });
+    giftLight.intensity = 1.1 + Math.sin(t * 5) * 0.4;
+}
+
+/* ================= 判定與立體機動攻擊 ================= */
+function azDirFromTitan() {
+    /* 玩家相對巨人的水平方位 */
+    const v = new THREE.Vector3(player.position.x - titan.position.x, 0, player.position.z - titan.position.z);
+    if (v.length() < 0.5) v.set(0, 0, 1);
+    return v.normalize();
+}
+
+function isBehind() {
+    /* PRD：巨人後方 ±45° 內 → fwd · toPlayer <= cos(135°) */
+    const fwd = new THREE.Vector3(Math.sin(titan.rotation.y), 0, Math.cos(titan.rotation.y));
+    const az = azDirFromTitan();
+    return fwd.dot(az) <= BEHIND_DOT;
+}
+
+function attack() {
+    if (isGameOver || giftOpened) return;
+    if (flightState) return;
+    const now = performance.now() / 1000;
+    if (now - lastLaunch < LAUNCH_COOLDOWN) return;
+    const dist = Math.hypot(player.position.x - titan.position.x, player.position.z - titan.position.z);
+    if (dist > LAUNCH_RANGE) {
+        addFloatingText(player.position.clone().add(new THREE.Vector3(0, 2.2, 0)), '太遠了，靠近巨人！', '#aaaaaa', 14);
+        return;
+    }
+    lastLaunch = now;
+
+    /* 飛行目標：巨人脖子的「玩家所在方位」那一側 */
+    const az = azDirFromTitan();
+    const strike = titan.position.clone().add(az.clone().multiplyScalar(3.2));
+    strike.y = NAPE_Y;
+
+    const p0 = player.position.clone();
+    p0.y += 0.6;
+    const ctrl1 = p0.clone().add(strike).multiplyScalar(0.5);
+    ctrl1.y += Math.max(6, dist * 0.45);
+
+    flightState = {
+        t: 0, phase: 1, dur1: 0.5, dur2: 0.55,
+        p0, strike, ctrl1,
+        land: null,             // phase2 落地點（命中後計算）
+        judged: false,
+        az: az.clone()
+    };
+    wire1.visible = wire2.visible = true;
+    sAnchor();
+    sWhoosh();
+    swingT = 0;
+    blades.forEach(b => { b.rotation.x = -0.7; b.rotation.z = 0.35; });
+}
+
+function quadBezier(p0, ctrl, p2, p) {
+    const a = 1 - p;
+    return new THREE.Vector3(
+        a * a * p0.x + 2 * a * p * ctrl.x + p * p * p2.x,
+        a * a * p0.y + 2 * a * p * ctrl.y + p * p * p2.y,
+        a * a * p0.z + 2 * a * p * ctrl.z + p * p * p2.z
+    );
+}
+
+function updateFlight(dt) {
+    if (!flightState) return;
+    const f = flightState;
+    f.t += dt;
+
+    if (f.phase === 1) {
+        const p = clamp(f.t / f.dur1, 0, 1);
+        const pos = quadBezier(f.p0, f.ctrl1, f.strike, p);
+        player.position.copy(pos);
+        const vel = quadBezier(f.p0, f.ctrl1, f.strike, Math.min(1, p + 0.03)).sub(pos);
+        if (vel.length() > 0.01) {
+            player.lookAt(pos.clone().add(vel.normalize().multiplyScalar(3)).add(new THREE.Vector3(0, 1.2, 0)));
+        }
+        /* ---- 命中瞬間：PRD 三條件即時判定 ---- */
+        if (p >= 0.78 && !f.judged) {
+            f.judged = true;
+            judgeStrike(f);
+        }
+        if (p >= 1) {
+            f.phase = 2;
+            f.t = 0;
+            /* 落地點：命中側方位往外 5.5（彈開則 7.2） */
+            const radius = f.critical ? 5.5 : 7.2;
+            f.land = titan.position.clone().add(f.az.clone().multiplyScalar(radius));
+            f.land.y = 0;
+        }
+    } else {
+        const p = clamp(f.t / f.dur2, 0, 1);
+        const ctrl = f.strike.clone().add(f.land).multiplyScalar(0.5);
+        ctrl.y = Math.min(f.strike.y, 4);
+        const pos = quadBezier(f.strike, ctrl, f.land, p);
+        player.position.copy(pos);
+        const vel = quadBezier(f.strike, ctrl, f.land, Math.min(1, p + 0.03)).sub(pos);
+        if (vel.length() > 0.01) {
+            player.lookAt(pos.clone().add(vel.normalize().multiplyScalar(3)).add(new THREE.Vector3(0, 1.2, 0)));
+        }
+        if (p >= 1) {
+            flightState = null;
+            wire1.visible = wire2.visible = false;
+            player.position.y = 0;
+            spawnParticles(player.position.clone(), [0x8a7a5a, 0x9c8b6b], 10, 3);
+        }
     }
 
-    // 斬擊觸發
-    function attack() {
-        if (isGameOver) return;
+    /* 鋼索更新 */
+    const hipL = player.localToWorld(new THREE.Vector3(-0.19, 0.85, 0.1));
+    const hipR = player.localToWorld(new THREE.Vector3(0.19, 0.85, 0.1));
+    const rotY = titan.rotation.y;
+    const a1 = titan.position.clone().add(new THREE.Vector3(1.8, 12.2, 0.6).applyAxisAngle(Y_AXIS, rotY));
+    const a2 = titan.position.clone().add(new THREE.Vector3(-1.8, 12.2, -0.6).applyAxisAngle(Y_AXIS, rotY));
+    wire1.geometry.setFromPoints([hipL, a1]);
+    wire2.geometry.setFromPoints([hipR, a2]);
+}
 
-        // 立體機動裝置：躍向空中
-        player.position.y = 6.5; 
-        setTimeout(() => { if(!isGameOver) player.position.y = 0; }, 400);
+/* PRD 精準判定：距離 ≤ 6.0、背後 ±45°、高度 Y ≥ 5.0 */
+function judgeStrike(f) {
+    const dist = Math.hypot(player.position.x - titan.position.x, player.position.z - titan.position.z);
+    const heightOk = player.position.y >= 5.0;
+    const distOk = dist <= 6.0;
+    const angleOk = isBehind();
+    if (distOk && angleOk && heightOk) {
+        f.critical = true;
+        criticalHit(f);
+    } else {
+        f.critical = false;
+        invalidHit(f, { distOk, angleOk, heightOk });
+    }
+}
 
-        const result = checkNapeHit();
+function criticalHit(f) {
+    titanHp = Math.max(0, titanHp - NAPE_DMG);
+    hpBar.style.width = titanHp + '%';
+    hpNum.textContent = titanHp;
+    flashT = 0.32;
+    staggerT = 1.4;
+    shake = 0.55;
+    timeScale = 0.28;
+    sCrit();
+    /* 刀光 + 噴血/蒸汽粒子 + 擊退 */
+    const napeWorld = NAPE_OFFSET.clone().applyAxisAngle(Y_AXIS, titan.rotation.y).add(titan.position);
+    arc.visible = true;
+    arc.position.copy(napeWorld);
+    arc.lookAt(camera.position);
+    arcT = 0.4;
+    spawnParticles(napeWorld, [0xff2222, 0xffaa33, 0xffffff], 34, 8);
+    spawnParticles(napeWorld.clone().add(new THREE.Vector3(0, 0.6, 0)), [0xeeeeee, 0xffffff], 16, 4, 2);
+    const fwd = new THREE.Vector3(Math.sin(titan.rotation.y), 0, Math.cos(titan.rotation.y));
+    titan.position.sub(fwd.clone().multiplyScalar(0.7));
+    addFloatingText(napeWorld.clone().add(new THREE.Vector3(0, 1.4, 0)), '致命一擊！後頸斬擊 −' + NAPE_DMG, '#ff6b6b', 22);
+    swingT = 0.28;
+    if (titanHp <= 0) {
+        isGameOver = true;
+        deathT = 0;
+        impactShook = false;
+        giftSpawned = false;
+        sWin();
+    }
+}
 
-        if (result.hit) {
-            // 精準命中後頸！
-            titanHP -= 50;
-            if (titanHP < 0) titanHP = 0;
-            document.getElementById('hp-bar').style.width = titanHP + '%';
+function invalidHit(f, checks) {
+    const pos = f.strike.clone();
+    arc.visible = true;
+    arc.position.copy(pos);
+    arc.lookAt(camera.position);
+    arcT = 0.22;
+    spawnParticles(pos, [0xffe9a0, 0xffcc66, 0xffffff], 16, 6);
+    shake = 0.2;
+    sDeflect();
+    /* PRD 指定提示文字 */
+    const msg = (!checks.angleOk) ? '無效攻擊！必須繞到後頸弱點！' : '無效攻擊！沒打中後頸！';
+    addFloatingText(pos.clone().add(new THREE.Vector3(0, 1.6, 0)), msg, '#ffd700', 16);
+    swingT = 0.18;
+}
 
-            // 噴血/蒸氣特效 (紅/白粒子)
-            createParticleBlood(titan.position.x, titan.position.y + 7.5, titan.position.z - 2);
+/* ================= 重玩 ================= */
+document.getElementById('btn-restart').addEventListener('click', restartGame);
+function restartGame() {
+    titanHp = 100;
+    hpBar.style.width = '100%';
+    hpNum.textContent = 100;
+    isGameOver = false;
+    deathT = 0;
+    impactShook = false;
+    giftSpawned = false;
+    giftOpened = false;
+    giftState = 'none';
+    gift.visible = false;
+    staggerT = 0;
+    flightState = null;
+    wire1.visible = wire2.visible = false;
+    titan.position.set(0, 0, -22);
+    titan.rotation.set(0, 0, 0);
+    titanBob.position.y = 0;
+    player.position.set(0, 0, 3);
+    player.rotation.y = 0;
+    blades.forEach(b => { b.rotation.x = 0; b.rotation.z = 0; });
+    arc.visible = false;
+    arc.material.opacity = 0;
+    nape.scale.setScalar(1);
+    couponOverlay.style.display = 'none';
+}
 
-            if (titanHP <= 0) {
-                isGameOver = true;
-                titan.rotation.x = -Math.PI / 2; // 巨人倒地
-                setTimeout(() => {
-                    document.getElementById('coupon-overlay').style.display = 'flex';
-                }, 800);
-            }
+/* ================= 主迴圈 ================= */
+const clock = new THREE.Clock();
+let walkT = 0;
+
+function animate() {
+    requestAnimationFrame(animate);
+    const rawDt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.elapsedTime;
+    const dt = rawDt * timeScale;
+
+    if (timeScale < 1) timeScale = Math.min(1, timeScale + rawDt * 2.4);
+
+    /* ---- 艾連地面移動 + 走路動畫 ---- */
+    const moving = !flightState && (Math.abs(joystickVector.x) > 0.05 || Math.abs(joystickVector.y) > 0.05 || keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || keys.ArrowUp || keys.ArrowDown || keys.ArrowLeft || keys.ArrowRight);
+    if (!flightState) {
+        let mx = joystickVector.x, mz = joystickVector.y;
+        if (keys.KeyW || keys.ArrowUp) mz -= 1;
+        if (keys.KeyS || keys.ArrowDown) mz += 1;
+        if (keys.KeyA || keys.ArrowLeft) mx -= 1;
+        if (keys.KeyD || keys.ArrowRight) mx += 1;
+        const len = Math.hypot(mx, mz);
+        if (len > 0.01) {
+            mx /= len; mz /= len;
+            player.position.x += mx * 9 * dt;
+            player.position.z += mz * 9 * dt;
+            player.rotation.y = Math.atan2(mx, mz);
+        }
+        player.position.x = clamp(player.position.x, -42, 42);
+        player.position.z = clamp(player.position.z, -42, 8);
+        /* 不要撞進巨人身體 */
+        const toT = new THREE.Vector3(player.position.x - titan.position.x, 0, player.position.z - titan.position.z);
+        if (toT.length() < 3.6) {
+            toT.normalize().multiplyScalar(3.6);
+            player.position.x = titan.position.x + toT.x;
+            player.position.z = titan.position.z + toT.z;
+        }
+    }
+
+    /* 走路/待機/飛行姿勢 */
+    if (moving) {
+        walkT += dt * 9;
+        legL.rotation.x = Math.sin(walkT) * 0.6;
+        legR.rotation.x = -Math.sin(walkT) * 0.6;
+        armL.rotation.x = Math.sin(walkT) * 0.5;
+        armR.rotation.x = -Math.sin(walkT) * 0.5;
+        armL.rotation.z = 0.08; armR.rotation.z = -0.08;
+    } else if (!flightState) {
+        legL.rotation.x *= 0.85; legR.rotation.x *= 0.85;
+        armL.rotation.x *= 0.85; armR.rotation.x *= 0.85;
+        armL.rotation.z = 0.05; armR.rotation.z = -0.05;
+    } else {
+        /* 飛行：收腿、雙臂後張 */
+        legL.rotation.x = 0.5; legR.rotation.x = 0.5;
+        armL.rotation.x = 1.3; armR.rotation.x = 1.3;
+        armL.rotation.z = -0.5; armR.rotation.z = 0.5;
+    }
+
+    updateFlight(dt);
+
+    /* ---- 巨人 AI ---- */
+    if (!isGameOver) {
+        if (staggerT > 0) {
+            staggerT -= rawDt;
+            titanBob.position.y = Math.sin(t * 30) * 0.16;
+            titanBob.rotation.z = Math.sin(t * 40) * 0.03;
+        } else if (!flightState) {
+            const targetAng = Math.atan2(player.position.x - titan.position.x, player.position.z - titan.position.z);
+            let dAng = targetAng - titan.rotation.y;
+            while (dAng > Math.PI) dAng -= Math.PI * 2;
+            while (dAng < -Math.PI) dAng += Math.PI * 2;
+            titan.rotation.y += dAng * Math.min(1, 0.3 * dt);
+            titanBob.position.y = Math.sin(t * 2.2) * 0.1;
+            titanBob.rotation.z = 0;
         } else {
-            // 沒砍中後頸
-            showHint();
+            titanBob.position.y = Math.sin(t * 2.2) * 0.1;
+            titanBob.rotation.z = 0;
         }
     }
 
-    function showHint() {
-        const hint = document.getElementById('hit-hint');
-        hint.style.display = 'block';
-        setTimeout(() => hint.style.display = 'none', 1200);
-    }
-
-    // 噴血特效
-    function createParticleBlood(x, y, z) {
-        const pGeo = new THREE.SphereGeometry(0.15, 4, 4);
-        const pMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        for (let i = 0; i < 20; i++) {
-            const particle = new THREE.Mesh(pGeo, pMat);
-            particle.position.set(x, y, z);
-            scene.add(particle);
-            
-            const vx = (Math.random() - 0.5) * 0.5;
-            const vy = Math.random() * 0.5;
-            const vz = (Math.random() - 0.5) * 0.5;
-
-            let ticks = 0;
-            const timer = setInterval(() => {
-                particle.position.x += vx;
-                particle.position.y += vy;
-                particle.position.z += vz;
-                ticks++;
-                if (ticks > 15) {
-                    scene.remove(particle);
-                    clearInterval(timer);
-                }
-            }, 30);
+    /* ---- 巨人死亡：正面仆倒 + 蒸氣 ---- */
+    if (isGameOver) {
+        deathT += dt;
+        const p = Math.min(deathT / 1.0, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        titan.rotation.x = (Math.PI / 2) * ease;
+        titan.position.y = -ease * 0.4;
+        titanBob.position.y = 0;
+        titanBob.rotation.z = 0;
+        if (deathT > 0.5 && !impactShook) {
+            impactShook = true;
+            shake = 0.7;
+            spawnParticles(titan.position.clone().add(new THREE.Vector3(0, 12, 2)), [0xeeeeee, 0xffffff, 0xcccccc], 36, 4.5, 2);
+        }
+        if (deathT > 1.2 && !giftSpawned) {
+            giftSpawned = true;
+            spawnGift();
         }
     }
 
-    // --- 5. 搖桿操控與渲染迴圈 ---
-    let joystickVector = { x: 0, y: 0 };
-    const joystickZone = document.getElementById('joystick-zone');
-    const joystickStick = document.getElementById('joystick-stick');
-    let joystickActive = false, joystickCenter = { x: 0, y: 0 };
-
-    joystickZone.addEventListener('touchstart', (e) => {
-        const rect = joystickZone.getBoundingClientRect();
-        joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-        joystickActive = true;
-        updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
-    });
-
-    joystickZone.addEventListener('touchmove', (e) => {
-        if (joystickActive) updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
-    });
-
-    joystickZone.addEventListener('touchend', () => {
-        joystickActive = false; joystickVector = { x: 0, y: 0 };
-        joystickStick.style.transform = `translate(0px, 0px)`;
-    });
-
-    function updateJoystick(cx, cy) {
-        const dx = cx - joystickCenter.x, dy = cy - joystickCenter.y;
-        const dist = Math.hypot(dx, dy), clamp = Math.min(dist, 40), angle = Math.atan2(dy, dx);
-        const mx = Math.cos(angle) * clamp, my = Math.sin(angle) * clamp;
-        joystickStick.style.transform = `translate(${mx}px, ${my}px)`;
-        joystickVector = { x: mx / 40, y: my / 40 };
+    /* ---- 雙刀揮砍 ---- */
+    if (swingT > 0) {
+        swingT -= rawDt;
+        const pr = 1 - swingT / 0.28;
+        const ang = -Math.sin(pr * Math.PI) * 1.4;
+        blades.forEach(b => { b.rotation.x = ang; b.rotation.z = 0; });
+    } else if (!flightState) {
+        blades.forEach(b => { b.rotation.x = 0; b.rotation.z = 0; });
     }
 
-    document.getElementById('btn-attack').addEventListener('touchstart', (e) => { e.preventDefault(); attack(); });
-
-    function animate() {
-        requestAnimationFrame(animate);
-        if (!isGameOver) {
-            if (joystickVector.x !== 0 || joystickVector.y !== 0) {
-                player.position.x += joystickVector.x * 0.3;
-                player.position.z += joystickVector.y * 0.3;
-                player.rotation.y = Math.atan2(-joystickVector.x, -joystickVector.y);
-            }
-
-            // 限制地圖邊界
-            player.position.x = Math.max(-40, Math.min(40, player.position.x));
-            player.position.z = Math.max(-40, Math.min(30, player.position.z));
-
-            // 攝影機動態跟隨艾連 (第三人稱 3D 視角)
-            camera.position.x = player.position.x;
-            camera.position.y = player.position.y + 5;
-            camera.position.z = player.position.z + 10;
-            camera.lookAt(player.position.x, player.position.y + 2, player.position.z - 5);
-        }
-        renderer.render(scene, camera);
+    /* ---- 刀光弧 ---- */
+    if (arcT > 0) {
+        arcT -= rawDt;
+        const pr = 1 - arcT / 0.4;
+        arc.material.opacity = Math.sin(pr * Math.PI) * 0.9;
+        arc.scale.setScalar(0.8 + pr * 0.7);
+        if (arcT <= 0) arc.visible = false;
     }
-    animate();
 
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
+    /* ---- 巨人受擊閃光 ---- */
+    if (flashT > 0) {
+        flashT -= rawDt;
+        const f = Math.max(flashT / 0.32, 0);
+        armorMat.emissive.setRGB(0.9 * f, 0.5 * f, 0.1 * f);
+    } else {
+        armorMat.emissive.setRGB(0, 0, 0);
+    }
+
+    /* ---- 後頸弱點脈動 ---- */
+    if (!isGameOver) nape.scale.setScalar(1 + Math.sin(t * 6) * 0.18);
+
+    /* ---- 雲、粒子、禮物 ---- */
+    clouds.forEach(c => {
+        c.position.x += c.userData.speed * dt;
+        if (c.position.x > 95) c.position.x = -95;
+    });
+    particles.forEach(p => {
+        if (p.dead) return;
+        p.life += dt;
+        const lf = 1 - p.life / p.maxLife;
+        p.mesh.position.addScaledVector(p.vel, dt);
+        p.vel.y -= 12 * dt;
+        p.mesh.material.opacity = lf;
+        p.mesh.scale.setScalar(p.mesh.userData.s * lf);
+        if (p.life >= p.maxLife) { p.dead = true; p.mesh.visible = false; }
+    });
+    updateGift(dt, t);
+
+    /* ---- 飄浮文字 ---- */
+    for (let i = ftList.length - 1; i >= 0; i--) {
+        const ft = ftList[i];
+        ft.ttl -= rawDt;
+        if (ft.ttl <= 0) { ft.el.remove(); ftList.splice(i, 1); continue; }
+        const v = ft.pos.clone().project(camera);
+        ft.el.style.left = ((v.x * 0.5 + 0.5) * window.innerWidth) + 'px';
+        ft.el.style.top = ((-v.y * 0.5 + 0.5) * window.innerHeight) + 'px';
+        ft.el.style.opacity = Math.min(1, ft.ttl / 0.4);
+    }
+
+    /* ---- 相機 ---- */
+    let camTarget, lookPoint;
+    if (flightState) {
+        const dir = new THREE.Vector3(player.position.x - titan.position.x, 0, player.position.z - titan.position.z);
+        if (dir.length() < 0.5) dir.set(0, 0, 1);
+        dir.normalize();
+        camTarget = player.position.clone().add(dir.clone().multiplyScalar(12)).add(new THREE.Vector3(0, 5.5, 0));
+        lookPoint = player.position.clone().add(dir.clone().multiplyScalar(-4)).add(new THREE.Vector3(0, 1.5, 0));
+    } else {
+        camTarget = new THREE.Vector3(player.position.x, player.position.y + 7.5, player.position.z + 13);
+        lookPoint = new THREE.Vector3(player.position.x, player.position.y + 2.4, player.position.z - 11);
+    }
+    camera.position.lerp(camTarget, 0.1);
+    camera.lookAt(lookPoint);
+    if (shake > 0.001) {
+        camera.position.x += (Math.random() - 0.5) * shake;
+        camera.position.y += (Math.random() - 0.5) * shake;
+        shake *= 0.86;
+    }
+    fovBoost = flightState ? 1 : Math.max(0, fovBoost - rawDt * 1.6);
+    const targetFov = 60 + 14 * fovBoost;
+    if (Math.abs(camera.fov - targetFov) > 0.1) {
+        camera.fov += (targetFov - camera.fov) * 0.12;
         camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    }
+
+    /* ---- 提示 + 按鈕冷卻 ---- */
+    if (!isGameOver && !giftOpened) {
+        if (isBehind()) {
+            hintPill.textContent = '⚔️ 弱點就緒！斬擊！';
+            hintPill.classList.add('ready');
+        } else {
+            hintPill.textContent = '🕹️ 繞到巨人背後 ⚔️ 斬擊後頸弱點！';
+            hintPill.classList.remove('ready');
+        }
+    } else if (isGameOver && giftSpawned && !giftOpened) {
+        hintPill.textContent = '🎁 靠近禮物打開它！';
+        hintPill.classList.remove('ready');
+    }
+    const coolLeft = (lastLaunch + LAUNCH_COOLDOWN - performance.now() / 1000);
+    btnAttack.classList.toggle('cooling', coolLeft > 0 || !!flightState);
+
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+animate();
+
+/* ================= 除錯 API（測試用，也可留著） ================= */
+window.__titanGame = {
+    hp: () => titanHp,
+    attack: () => attack(),
+    behind: () => isBehind(),
+    teleport: (x, z) => { player.position.set(x, 0, z); },
+    judge: () => {
+        const fwd = new THREE.Vector3(Math.sin(titan.rotation.y), 0, Math.cos(titan.rotation.y));
+        const az = azDirFromTitan();
+        return {
+            rotY: (titan.rotation.y * 180 / Math.PI).toFixed(0),
+            dot: fwd.dot(az).toFixed(3),
+            behind: isBehind(),
+            dist: Math.hypot(player.position.x - titan.position.x, player.position.z - titan.position.z).toFixed(2),
+            y: player.position.y.toFixed(1),
+            flight: !!flightState,
+            stagger: staggerT.toFixed(2),
+            player: [player.position.x.toFixed(1), player.position.y.toFixed(1), player.position.z.toFixed(1)]
+        };
+    },
+    state: () => ({
+        flight: !!flightState,
+        gameOver: isGameOver,
+        gift: giftState,
+        overlay: couponOverlay.style.display,
+        player: [player.position.x.toFixed(1), player.position.y.toFixed(1), player.position.z.toFixed(1)],
+        titanRot: (titan.rotation.y * 180 / Math.PI).toFixed(0)
+    }),
+    errors: () => errlog.textContent
+};
 </script>
+
 </body>
 </html>
