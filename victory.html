@@ -186,6 +186,18 @@ body::after {
 .supply .s-track i { display: block; height: 100%; width: 68%; border-radius: 3px; background: linear-gradient(90deg, #3a7a58, #55c98a); animation: trackFlow 2s linear infinite; background-size: 24px 6px; }
 @keyframes trackFlow { 0% { background-position: 0 0; } 100% { background-position: 24px 0; } }
 .supply .s-eta { font-family: monospace; font-size: 12px; color: #d4af37; margin-top: 10px; text-align: center; letter-spacing: 3px; }
+.supply .s-eta .eta-glow { color: #f0d78c; text-shadow: 0 0 12px rgba(212,175,55,0.7); }
+.supply .s-delivery {
+    margin-top: 12px; text-align: center; border: 1px solid rgba(212,175,55,0.4);
+    border-radius: 6px; padding: 10px 8px; background: rgba(212,175,55,0.08);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.supply .s-delivery .d-label { font-family: monospace; font-size: 9.5px; letter-spacing: 4px; color: #b8a87c; }
+.supply .s-delivery .d-month {
+    font-size: 30px; font-weight: 900; letter-spacing: 10px; color: #f0d78c; line-height: 1.3;
+    text-shadow: 0 0 18px rgba(212,175,55,0.75);
+}
+.supply .s-delivery .d-note { font-size: 11px; color: #a8d8b8; letter-spacing: 2px; }
 
 /* ============ 兌換底註 ============ */
 .redeem-note {
@@ -273,7 +285,12 @@ body::after {
                 <span class="to">你的手中</span>
             </div>
             <div class="s-track"><i></i></div>
-            <div class="s-eta">ESTIMATED ARRIVAL : <b>9 月份專人親送！</b></div>
+            <div class="s-eta">ESTIMATED ARRIVAL : <b class="eta-glow">9 月份專人親送！</b></div>
+            <div class="s-delivery">
+                <span class="d-label">配 送 時 間</span>
+                <span class="d-month">九 月</span>
+                <span class="d-note">艾連將親自送到妳手上 ✦</span>
+            </div>
         </div>
 
         <!-- 兌換底註 -->

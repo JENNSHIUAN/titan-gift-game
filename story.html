@@ -453,29 +453,19 @@ document.getElementById('btn-intel-next').addEventListener('click', () => {
 });
 
 /* ================= 場景 3：密室逃脫・找線索 =================
-   六個地點都是艾連藏的任務紙條（配合你實際藏的位置）。
-   密碼不綁在任何地點 — 找到密碼紙條後，點「輸入密碼」解鎖。 */
+   六個地點都藏著艾連的任務紙條（配合你實際藏的位置）。
+   任務內容寫在紙條上 — 手機只顯示「找到紙條」的確認，不透露任務。
+   找到密碼紙條後，點「輸入密碼」解鎖。 */
 const huntMsg = document.getElementById('hunt-msg');
 const notePop = document.getElementById('note-pop');
-
-// 每個地點對應的任務紙條文案（點擊後顯示）
-const locationNotes = {
-    pillow:  '🛏️ 枕頭下…藏了一張任務：\n任務：親我兩下 ♡',
-    basket:  '🧺 籃子裡…是一張任務：\n任務：給我一個大大的擁抱',
-    desk:    '💻 電腦桌下面…有張任務：\n任務：幫我倒杯水',
-    laundry: '🧺 洗衣籃裡…是一張紙條：\n任務：一起把衣服晾好',
-    chair:   '🪑 椅子底下…是張任務卡：\n任務：說「我愛你」三次',
-    corner:  '🚪 門的角落…黏著一張紙條：\n任務：關上門，親親抱抱十分鐘',
-};
 
 let huntFound = 0;   // 已搜尋地點數
 document.querySelectorAll('.item').forEach(el => {
     el.addEventListener('click', () => {
         if (el.classList.contains('found')) return;   // 點過不能再點
-        const key = el.dataset.item;
         el.classList.add('found');
         huntFound++;
-        notePop.textContent = locationNotes[key] || '…這裡只有一張任務紙條。';
+        notePop.textContent = '📜 這裡藏著一張任務紙條！\n（任務內容寫在紙條上 — 完成它，再找下一張！）';
         notePop.classList.add('show');
         huntMsg.className = 'hunt-msg ok';
         huntMsg.textContent = '✓ 已搜尋 ' + huntFound + ' / 6 個地點 — 找到密碼紙條後，點「輸入密碼」！';
