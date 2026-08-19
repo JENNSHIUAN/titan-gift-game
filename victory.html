@@ -310,7 +310,7 @@ body::after {
 'use strict';
 /* 原型模式：按「再挑戰一次」回到一般狀態（未來交給遊戲本體控制） */
 document.getElementById('btn-restart').addEventListener('click', () => {
-    // 在這裡只做一個 flash 示意（嵌入 index.html 後此按鈕由遊戲綁定）
+    // 原型模式：按「再挑戰一次」回到一般狀態（未來交給遊戲本體 game.html 控制）
     const card = document.querySelector('.victory-card');
     card.style.transition = 'transform 0.35s';
     card.style.transform = 'scale(0.92)';
