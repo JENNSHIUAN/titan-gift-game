@@ -33,8 +33,10 @@ body::after {
     position: absolute; inset: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; padding: 24px;
     opacity: 0; pointer-events: none; transition: opacity 0.6s ease;
-    overflow-y: auto;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; -ms-overflow-style: none;
 }
+.scene::-webkit-scrollbar { display: none; }
 .scene.active { opacity: 1; pointer-events: auto; }
 
 /* ============ 通用元件 ============ */
@@ -99,9 +101,10 @@ h2.subtitle { font-size: 15px; letter-spacing: 4px; color: #d4af37; margin-top: 
     background: linear-gradient(160deg, rgba(58,42,16,0.35), rgba(20,14,6,0.6));
     border: 1px solid #4a3a18; border-radius: 6px; padding: 26px 22px; margin-bottom: 16px;
     box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
-    opacity: 0; transform: translateY(14px); transition: all 0.7s ease;
+    display: none;
 }
-.story-card.visible { opacity: 1; transform: translateY(0); }
+.story-card.visible { display: block; animation: cardIn 0.7s ease; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(14px);} to { opacity: 1; transform: translateY(0);} }
 .story-card p { font-size: 15.5px; line-height: 2.05; letter-spacing: 1px; color: #d8c9a0; }
 .story-card p.red { color: #e05a4a; font-weight: 700; }
 .story-card p.gold { color: #d4af37; font-weight: 700; }
@@ -157,6 +160,17 @@ h2.subtitle { font-size: 15px; letter-spacing: 4px; color: #d4af37; margin-top: 
 @keyframes shake { 0%,100% { transform: translateX(0);} 20% { transform: translateX(-7px);} 40% { transform: translateX(7px);} 60% { transform: translateX(-5px);} 80% { transform: translateX(5px);} }
 .item.glow-hit { border-color: #d4af37; box-shadow: 0 0 22px rgba(212,175,55,0.6); background: rgba(212,175,55,0.12); animation: hitPop 0.45s; }
 @keyframes hitPop { 0% { transform: scale(0.85);} 55% { transform: scale(1.1);} 100% { transform: scale(1);} }
+/* 已搜尋過的地點：鎖定不可再點 */
+.item.found { opacity: 0.5; border-color: #5a4c26; cursor: default; pointer-events: none; filter: grayscale(0.5); }
+.item.found::after { content: "✓ 已搜尋"; position: absolute; bottom: 4px; right: 6px; font-size: 8.5px; color: #8a7538; letter-spacing: 1px; }
+/* 密室逃脫個別紙條彈出 */
+.note-pop {
+    display: none; margin-top: 12px; padding: 12px 16px; max-width: 400px; width: 100%;
+    background: linear-gradient(160deg, rgba(58,42,16,0.5), rgba(20,14,6,0.7));
+    border: 1px solid #6a5428; border-radius: 6px; font-size: 14px; line-height: 2;
+    color: #e8d9a8; text-align: center; letter-spacing: 1px; animation: cardIn 0.4s ease;
+}
+.note-pop.show { display: block; }
 .item .badge-new {
     position: absolute; top: 5px; right: 5px; background: #8a1a10; color: #f0e2b6;
     font-size: 8.5px; padding: 2px 6px; border-radius: 2px; letter-spacing: 1px; font-weight: 800;
@@ -167,6 +181,11 @@ h2.subtitle { font-size: 15px; letter-spacing: 4px; color: #d4af37; margin-top: 
 }
 .hunt-msg.err { color: #e05a4a; font-weight: 700; }
 .hunt-msg.ok { color: #d4af37; font-weight: 700; }
+/* 密室逃脫底部操作列 */
+.hunt-actions { display: flex; gap: 12px; margin-top: 16px; width: 100%; max-width: 400px; justify-content: center; flex-wrap: wrap; }
+.hunt-actions .btn { margin-top: 0; padding: 12px 22px; font-size: 14px; }
+.btn.back { background: linear-gradient(180deg, #2a2416, #1c1810); border-color: #6a5a2e; color: #b8a87c; }
+.btn.code { background: linear-gradient(180deg, #3a5a2e, #1c2a14); border-color: #7ab85a; }
 
 /* ============ 場景 4：密碼輸入 ============ */
 #scene-code { background: radial-gradient(ellipse at center, #1c1408 0%, #0e0a05 75%); }
@@ -318,22 +337,27 @@ h2.subtitle { font-size: 15px; letter-spacing: 4px; color: #d4af37; margin-top: 
                 <span>調査兵団本部</span><span class="blink">■ 嚴禁外洩</span>
             </div>
         </div>
-        <button class="btn glow" id="btn-intel-next">領取任務物品</button>
+        <button class="btn glow" id="btn-intel-next">開始搜尋線索</button>
     </section>
 
-    <!-- ═══════════ 場景 3：找物件 ═══════════ -->
+    <!-- ═══════════ 場景 3：密室逃脫・找線索 ═══════════ -->
     <section class="scene" id="scene-hunt">
-        <h1 class="title" style="font-size:20px;">尋找通關密碼</h1>
-        <p class="hunt-hint">艾連把密碼藏在桌上的某個物件裡 —<br>他說：<b>「交給妳的那封信。」</b></p>
+        <h1 class="title" style="font-size:20px;">密室逃脫・找線索</h1>
+        <p class="hunt-hint">艾連把紙條藏在家的六個角落 —<br>一一找出，完成任務，最後<b>輸入密碼</b>解鎖！</p>
         <div class="table" id="item-table">
-            <div class="item" data-item="map"><div class="ico">🗺️</div><div class="lbl">牆外地形圖</div></div>
-            <div class="item" data-item="watch"><div class="ico">⏳</div><div class="lbl">懷錶</div></div>
-            <div class="item" data-item="letter"><div class="ico">✉️</div><div class="lbl">機密信封</div><div class="badge-new">極密</div></div>
-            <div class="item" data-item="scarf"><div class="ico">🧣</div><div class="lbl">紅圍巾</div></div>
-            <div class="item" data-item="blade"><div class="ico">🗡️</div><div class="lbl">立體機動刀刃</div></div>
-            <div class="item" data-item="goggles"><div class="ico">🔭</div><div class="lbl">調查望遠鏡</div></div>
+            <div class="item" data-item="pillow"><div class="ico">🛏️</div><div class="lbl">枕頭下</div></div>
+            <div class="item" data-item="basket"><div class="ico">🧺</div><div class="lbl">籃子裡</div></div>
+            <div class="item" data-item="desk"><div class="ico">💻</div><div class="lbl">電腦桌下面</div></div>
+            <div class="item" data-item="laundry"><div class="ico">🧺</div><div class="lbl">洗衣籃裡</div></div>
+            <div class="item" data-item="chair"><div class="ico">🪑</div><div class="lbl">椅子底下</div></div>
+            <div class="item" data-item="corner"><div class="ico">🚪</div><div class="lbl">門的角落</div></div>
         </div>
-        <div class="hunt-msg" id="hunt-msg">點擊桌上的物件，找出線索……</div>
+        <div class="note-pop" id="note-pop"></div>
+        <div class="hunt-msg" id="hunt-msg">依線索找出紙條，點擊對應的地點……</div>
+        <div class="hunt-actions">
+            <button class="btn back" id="btn-hunt-back">← 返回情報</button>
+            <button class="btn code" id="btn-goto-code">🔑 輸入密碼</button>
+        </div>
     </section>
 
     <!-- ═══════════ 場景 4：密碼輸入 ═══════════ -->
@@ -342,9 +366,9 @@ h2.subtitle { font-size: 15px; letter-spacing: 4px; color: #d4af37; margin-top: 
             <div class="lock-ico">🔐</div>
             <div class="code-title">機 密 解 鎖</div>
             <div class="code-sub">
-                信封裡掉出了一張密碼卡：<br>
-                艾連的字跡寫著——<br>
-                <b style="color:#d4af37;">「記得我們的那一天。」</b>
+                找到了密碼紙條 — 艾連的字跡寫著：<br>
+                <b style="color:#d4af37;">「記得我們的那一天。」</b><br>
+                輸入 4 位密碼，解鎖任務！
             </div>
             <div class="code-dots" id="code-dots">
                 <div class="code-dot" id="dot-0">·</div>
@@ -354,6 +378,7 @@ h2.subtitle { font-size: 15px; letter-spacing: 4px; color: #d4af37; margin-top: 
             </div>
             <div class="keypad" id="keypad"></div>
             <div class="code-msg" id="code-msg"></div>
+            <button class="btn back" id="btn-code-back" style="margin-top:14px;font-size:13px;padding:10px 20px;">← 返回找線索</button>
         </div>
     </section>
 
@@ -421,41 +446,56 @@ document.getElementById('btn-story-next').addEventListener('click', () => {
     }
 });
 
-/* ================= 場景 2：情報 → 找物件 ================= */
+/* ================= 場景 2：情報 → 密室逃脫 ================= */
 document.getElementById('btn-intel-next').addEventListener('click', () => {
     showScene(3);
-    document.getElementById('hunt-msg').textContent = '點擊桌上的物件，找出線索……';
+    document.getElementById('hunt-msg').textContent = '依線索找出紙條，點擊對應的地點……';
 });
 
-/* ================= 場景 3：找物件 ================= */
+/* ================= 場景 3：密室逃脫・找線索 =================
+   六個地點都是艾連藏的任務紙條（配合你實際藏的位置）。
+   密碼不綁在任何地點 — 找到密碼紙條後，點「輸入密碼」解鎖。 */
 const huntMsg = document.getElementById('hunt-msg');
-const wrongMsgs = [
-    '…沒有特別的線索。',
-    '艾連說不是這個。',
-    '再仔細想想——「信」。',
-    '這只是普通的物件。',
-];
-let wrongIdx = 0;
+const notePop = document.getElementById('note-pop');
+
+// 每個地點對應的任務紙條文案（點擊後顯示）
+const locationNotes = {
+    pillow:  '🛏️ 枕頭下…藏了一張任務：\n任務：親我兩下 ♡',
+    basket:  '🧺 籃子裡…是一張任務：\n任務：給我一個大大的擁抱',
+    desk:    '💻 電腦桌下面…有張任務：\n任務：幫我倒杯水',
+    laundry: '🧺 洗衣籃裡…是一張紙條：\n任務：一起把衣服晾好',
+    chair:   '🪑 椅子底下…是張任務卡：\n任務：說「我愛你」三次',
+    corner:  '🚪 門的角落…黏著一張紙條：\n任務：關上門，親親抱抱十分鐘',
+};
+
+let huntFound = 0;   // 已搜尋地點數
 document.querySelectorAll('.item').forEach(el => {
     el.addEventListener('click', () => {
-        if (el.classList.contains('glow-hit')) return;
-        if (el.dataset.item === 'letter') {
-            // 找到機密信封
-            el.classList.add('glow-hit');
-            huntMsg.className = 'hunt-msg ok';
-            huntMsg.textContent = '✉️ 找到「機密信封」了！艾連的筆跡…裡面夾著一張密碼卡。';
-            setTimeout(() => {
-                showScene(4);
-                resetCode();
-            }, 1100);
-        } else {
-            el.classList.add('shake');
-            setTimeout(() => el.classList.remove('shake'), 450);
-            huntMsg.className = 'hunt-msg err';
-            huntMsg.textContent = wrongMsgs[wrongIdx % wrongMsgs.length];
-            wrongIdx++;
-        }
+        if (el.classList.contains('found')) return;   // 點過不能再點
+        const key = el.dataset.item;
+        el.classList.add('found');
+        huntFound++;
+        notePop.textContent = locationNotes[key] || '…這裡只有一張任務紙條。';
+        notePop.classList.add('show');
+        huntMsg.className = 'hunt-msg ok';
+        huntMsg.textContent = '✓ 已搜尋 ' + huntFound + ' / 6 個地點 — 找到密碼紙條後，點「輸入密碼」！';
     });
+});
+
+// 獨立「輸入密碼」按鈕
+document.getElementById('btn-goto-code').addEventListener('click', () => {
+    showScene(4);
+    resetCode();
+});
+
+// 返回：密室 → 情報頁
+document.getElementById('btn-hunt-back').addEventListener('click', () => {
+    showScene(2);
+});
+
+// 返回：密碼頁 → 密室
+document.getElementById('btn-code-back').addEventListener('click', () => {
+    showScene(3);
 });
 
 /* ================= 場景 4：密碼輸入（密碼 = 0226） ================= */
