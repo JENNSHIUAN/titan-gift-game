@@ -34,8 +34,12 @@ body::after {
 /* ============ 主容器 ============ */
 #report {
     position: fixed; inset: 0; z-index: 10;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center;
+    /* 用 flex-start 避免過高內容被置中裁切上半部；配合 overflow 捲動 */
+    justify-content: flex-start;
     padding: 18px; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; -ms-overflow-style: none;
 }
 #report::-webkit-scrollbar { display: none; }
 
