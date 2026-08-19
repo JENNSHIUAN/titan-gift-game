@@ -54,19 +54,20 @@ python3 -m http.server 8000
 - **音效全合成**（WebAudio）：鋼索發射、噴氣、致命斬擊、鎧甲彈開、勝利音階 — 零音檔
 - 粒子系統：噴血／蒸汽／鎧甲火花／禮物彩帶
 
-### 換成外部 3D 模型（選用）
+### 3D 模型（已內建，CC-BY 授權）
 
-架構已預留 **GLTFLoader** 路徑：把模型放進 `models/` 資料夾即可自動載入（需要經 HTTP 開啟，`file://` 不會載入模型）：
+遊戲已內建兩支高品質外部模型（Sketchfab，**CC-BY 4.0 授權**，需標註作者）：
 
-```
-models/
-  eren.glb    ← 艾連模型（含 Idle / Run / Jump 動畫最佳）
-  titan.glb   ← 鎧之巨人模型
-```
+| 角色 | 檔案 | 作者 |
+|---|---|---|
+| 艾連（調查兵團，含斗篷/武器/立體機動） | `models/aotwa_eren_yeager.glb` | [Prime Slayer3D](https://sketchfab.com/ianadrielbravo) |
+| 鎧之巨人 | `models/armored_titan.glb` | [PotBin](https://sketchfab.com/PotBin) |
 
-- 推薦來源：Sketchfab 搜尋免費 `.glb`（注意授權，進擊的巨人角色多為粉絲創作，僅供個人使用）
-- 沒有模型檔時會自動使用內建的程式化角色，遊戲照常運作
-- 模型比例會自動縮放（艾連約 1.9 單位高、巨人約 16 單位高）；動畫會自動對應 Idle/Run/Jump 片段
+- 模型需經 **HTTP 開啟**才會載入（`file://` 直接開檔會自動改用內建程式化角色，遊戲照常運作）
+- 模型為靜態姿勢：移動/飛行/僵直/死亡動畫由遊戲程式在根層級驅動
+- 想換成其他模型：把 `.glb` 放進 `models/`（或改名成 `eren.glb` / `titan.glb`），高度會自動縮放（艾連 ≈ 1.9 單位、巨人 ≈ 16 單位）
+- 若角色朝向相反（面朝 -Z），在 `tryLoadModels()` 的載入回呼中把 `root.rotation.y` 設為 `Math.PI` 即可
+- 更換模型時請自行確認授權
 
 ---
 
@@ -90,3 +91,4 @@ window.__titanGame.errors()                // 頁面 JS 錯誤（應為空）
 
 - 遊戲為個人／情侶互動用途，非商業專案
 - 靈感來自《進擊的巨人》諫山創老師的作品，角色與世界觀版權屬原作者
+- 3D 模型授權：**CC-BY 4.0**（Prime Slayer3D / PotBin，Sketchfab），本專案未修改模型內容

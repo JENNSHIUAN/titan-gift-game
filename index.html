@@ -302,6 +302,8 @@
     <!-- Three.js r128（多 CDN 備援） -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>window.THREE || document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');</script>
+    <!-- GLTFLoader（選用：models/ 有 .glb 時自動載入外部模型） -->
+    <script>window.THREE && document.write('<script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/GLTFLoader.js"><\/script>');</script>
 </head>
 <body>
 
@@ -343,6 +345,7 @@
 </div>
 
 <div id="errlog"></div>
+<div id="credit-gltf" style="display:none; position:absolute; bottom:4px; right:8px; color:rgba(255,255,255,0.45); font-size:9px; z-index:15; pointer-events:none;">3D 模型: Prime Slayer3D / PotBin (CC-BY 4.0)</div>
 
 <script>
 'use strict';
@@ -377,7 +380,7 @@ let flightState = null;
 let lastLaunch = 0;
 const LAUNCH_COOLDOWN = 1.4;
 const LAUNCH_RANGE = 20;
-const NAPE_Y = 11.8;                 // 後頸高度（判定：Y >= 5.0）
+const NAPE_Y = 13.2;                 // 後頸高度（判定：Y >= 5.0）
 const BEHIND_DOT = -0.7071;          // 背後 ±45° → dot <= cos(135°)
 
 /* ================= Three.js 場景 ================= */
@@ -1500,6 +1503,57 @@ window.addEventListener('resize', () => {
 });
 
 animate();
+
+/* ================= 外部模型載入（GLTFLoader，選用） =================
+   把 .glb 放進 models/ 並用 HTTP 開啟（file:// 不會載入），就會自動取代內建角色。
+   模型為靜態姿勢，遊戲的移動/飛行/僵直/死亡動畫由程式在根層級驅動。 */
+let erenGLB = null;
+let titanGLB = null;
+
+function normalizeLoadedModel(root, targetHeight) {
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const h = (box.max.y - box.min.y) || 1;
+    root.scale.setScalar(targetHeight / h);
+    root.updateMatrixWorld(true);
+    const box2 = new THREE.Box3().setFromObject(root);
+    root.position.y -= box2.min.y;                                    // 腳貼地
+    root.position.x -= (box2.min.x + box2.max.x) / 2;                // 置中
+    root.position.z -= (box2.min.z + box2.max.z) / 2;
+    root.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    return root;
+}
+
+function tryLoadModels() {
+    if (!window.THREE || !THREE.GLTFLoader) return;   // GLTFLoader CDN 失敗 → 用內建模型
+    const loader = new THREE.GLTFLoader();
+    const onEren = (gltf) => {
+        try {
+            erenGLB = normalizeLoadedModel(gltf.scene, 1.9, player);
+            player.add(erenGLB);
+            player.children.forEach(c => { if (c !== erenGLB) c.visible = false; });
+            document.getElementById('credit-gltf').style.display = 'block';
+        } catch (e) { errlog.textContent += 'Eren GLB: ' + e.message + '\n'; }
+    };
+    const onTitan = (gltf) => {
+        try {
+            titanGLB = normalizeLoadedModel(gltf.scene, 16, titan);
+            titanBob.add(titanGLB);                                    // 進 titanBob：呼吸/僵直動畫仍有效
+            titanBob.children.forEach(c => { if (c !== nape && c !== titanGLB) c.visible = false; });
+            document.getElementById('credit-gltf').style.display = 'block';
+        } catch (e) { errlog.textContent += 'Titan GLB: ' + e.message + '\n'; }
+    };
+    const noop = () => {};
+    /* 依序嘗試候選檔名（支援改名） */
+    loader.load('models/aotwa_eren_yeager.glb', onEren, undefined, () => {
+        loader.load('models/eren.glb', onEren, undefined, noop);
+    });
+    loader.load('models/armored_titan.glb', onTitan, undefined, () => {
+        loader.load('models/titan.glb', onTitan, undefined, noop);
+    });
+}
+
+tryLoadModels();
 
 /* ================= 除錯 API（測試用，也可留著） ================= */
 window.__titanGame = {
