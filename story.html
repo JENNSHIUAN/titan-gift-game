@@ -581,7 +581,7 @@ function enterGame() {
     const stage = document.getElementById('stage');
     stage.classList.add('fadeout');
     setTimeout(() => {
-        window.location.href = 'index.html';
+        window.location.href = 'index.html?from=story';
     }, 500);
 }
 document.getElementById('btn-launch-now').addEventListener('click', enterGame);

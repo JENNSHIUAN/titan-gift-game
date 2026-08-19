@@ -1,6 +1,10 @@
 # macOS
 .DS_Store
 
+# 已淘汰的舊模型檔（保留在本地，但不進 repo）
+models/aotwa_eren_yeager.glb
+models/armored_titan.glb
+
 # 敏感資料（一律不准進 repo）
 *.csv
 *.xlsx
