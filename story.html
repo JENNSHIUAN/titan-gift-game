@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>進擊的情人節：牆外特別調查任務</title>
+<style>
+/* ============ 基礎：黑暗史詩基調 ============ */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body {
+    font-family: "Noto Serif TC", "Songti TC", "SimSun", serif;
+    background: #120d08;
+    color: #e8d9a8;
+    user-select: none; -webkit-user-select: none;
+    touch-action: manipulation;
+}
+/* 舊紙斑駁噪點 overlay */
+body::before {
+    content: ""; position: fixed; inset: 0; z-index: 999; pointer-events: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/><feColorMatrix type="saturate" values="0"/></filter><rect width="180" height="180" filter="url(%23n)" opacity="0.07"/></svg>');
+    opacity: 0.5;
+}
+/* 四周暗角 */
+body::after {
+    content: ""; position: fixed; inset: 0; z-index: 998; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%);
+}
+
+/* ============ 場景容器 ============ */
+#stage { position: fixed; inset: 0; }
+.scene {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 24px;
+    opacity: 0; pointer-events: none; transition: opacity 0.6s ease;
+    overflow-y: auto;
+}
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* ============ 通用元件 ============ */
+h1.title {
+    font-size: 34px; font-weight: 900; letter-spacing: 6px; text-align: center;
+    color: #f0e2b6; text-shadow: 0 0 18px rgba(212,175,55,0.35), 0 3px 0 #3a2a10;
+    line-height: 1.5;
+}
+h2.subtitle { font-size: 15px; letter-spacing: 4px; color: #d4af37; margin-top: 10px; text-align: center; }
+.divider {
+    width: 70%; height: 2px; margin: 18px auto;
+    background: linear-gradient(90deg, transparent, #d4af37, transparent);
+    position: relative;
+}
+.divider::after {
+    content: "❖"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -60%);
+    background: #120d08; padding: 0 12px; color: #d4af37; font-size: 13px;
+}
+.btn {
+    font-family: inherit; font-size: 16px; font-weight: 800; letter-spacing: 3px;
+    color: #f0e2b6; background: linear-gradient(180deg, #3a2a10, #241a08);
+    border: 2px solid #d4af37; border-radius: 4px; padding: 14px 42px; margin-top: 26px;
+    cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 18px rgba(0,0,0,0.6);
+}
+.btn:active { transform: scale(0.96); background: linear-gradient(180deg, #4a3514, #2c1f0a); }
+.btn.glow { animation: btnPulse 1.6s ease-in-out infinite; }
+@keyframes btnPulse { 0%,100% { box-shadow: 0 0 10px rgba(212,175,55,0.3);} 50% { box-shadow: 0 0 26px rgba(212,175,55,0.7);} }
+
+/* 印章效果 */
+.stamp {
+    display: inline-block; border: 3px double rgba(190,40,40,0.85); border-radius: 6px;
+    color: rgba(190,40,40,0.9); font-weight: 900; font-size: 17px; letter-spacing: 5px;
+    padding: 6px 18px; transform: rotate(-8deg); opacity: 0;
+}
+.stamp.show { animation: stampHit 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) forwards; }
+@keyframes stampHit { 0% { opacity: 0; transform: rotate(-8deg) scale(2.4);} 60% { opacity: 1; transform: rotate(-8deg) scale(0.92);} 100% { opacity: 1; transform: rotate(-8deg) scale(1);} }
+
+/* 掃描線警戒背景（進巨緊張感） */
+.alarm-bg {
+    position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.5s;
+    background: repeating-linear-gradient(0deg, transparent 0 6px, rgba(200,30,30,0.06) 6px 7px);
+    animation: scanline 0.9s linear infinite; z-index: 5;
+}
+.alarm-bg.on { opacity: 1; }
+@keyframes scanline { from { background-position: 0 0; } to { background-position: 0 24px; } }
+
+/* ============ 場景 0：標題畫面 ============ */
+#scene-intro { background: radial-gradient(ellipse at 50% 30%, #241a08 0%, #120d08 60%, #0a0704 100%); }
+.wings-badge { width: 110px; height: 110px; margin-bottom: 18px; filter: drop-shadow(0 0 16px rgba(212,175,55,0.45)); animation: badgeFloat 3s ease-in-out infinite; }
+@keyframes badgeFloat { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-8px);} }
+.intro-quote {
+    font-size: 13px; letter-spacing: 2px; color: #9c8a5c; margin-top: 22px; text-align: center; line-height: 2;
+}
+.intro-quote b { color: #d4af37; }
+.crest-line { width: 130px; height: 1px; background: #5a4a22; margin: 14px auto; position: relative; }
+.crest-line::after { content: "⚔"; position: absolute; left: 50%; top: -8px; transform: translateX(-50%); color: #8a7538; font-size: 12px; }
+
+/* ============ 場景 1：故事前言 ============ */
+#scene-story { background: linear-gradient(180deg, #16100a 0%, #120d08 100%); }
+.story-block { max-width: 420px; width: 100%; text-align: center; }
+.story-card {
+    background: linear-gradient(160deg, rgba(58,42,16,0.35), rgba(20,14,6,0.6));
+    border: 1px solid #4a3a18; border-radius: 6px; padding: 26px 22px; margin-bottom: 16px;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+    opacity: 0; transform: translateY(14px); transition: all 0.7s ease;
+}
+.story-card.visible { opacity: 1; transform: translateY(0); }
+.story-card p { font-size: 15.5px; line-height: 2.05; letter-spacing: 1px; color: #d8c9a0; }
+.story-card p.red { color: #e05a4a; font-weight: 700; }
+.story-card p.gold { color: #d4af37; font-weight: 700; }
+.story-card p.small { font-size: 13.5px; color: #9c8a5c; }
+.story-index { font-size: 11px; color: #6b5a30; letter-spacing: 3px; margin-top: 16px; }
+
+/* ============ 場景 2：情報頁 ============ */
+#scene-intel { background: linear-gradient(180deg, #14100a 0%, #0f0b06 100%); }
+.intel-doc {
+    width: 100%; max-width: 400px; background: linear-gradient(170deg, #cfc09a 0%, #b8a87c 100%);
+    color: #2b2010; border-radius: 4px; padding: 26px 22px; position: relative;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.7), inset 0 0 60px rgba(90,70,30,0.35);
+    transform: rotate(-0.6deg);
+}
+.intel-doc::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><filter id="p"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2"/><feColorMatrix type="saturate" values="0"/></filter><rect width="140" height="140" filter="url(%23p)" opacity="0.12"/></svg>');
+    border-radius: 4px;
+}
+.intel-head { text-align: center; border-bottom: 2px solid #4a3a20; padding-bottom: 12px; margin-bottom: 16px; }
+.intel-head .top { font-size: 11px; letter-spacing: 4px; color: #6a5428; font-weight: 800; }
+.intel-head h3 { font-size: 21px; letter-spacing: 3px; color: #241a08; margin-top: 6px; font-weight: 900; }
+.intel-head .num { font-size: 12px; color: #7a4a3a; margin-top: 5px; font-weight: 700; }
+.intel-body { font-size: 14px; line-height: 2; color: #33260f; }
+.intel-body b { color: #8a1a10; }
+.intel-body .key-line { border-left: 3px solid #8a1a10; padding-left: 10px; margin: 10px 0; background: rgba(138,26,16,0.07); }
+.intel-foot { margin-top: 14px; padding-top: 10px; border-top: 1px dashed #6a5428; font-size: 12px; color: #6a5428; display: flex; justify-content: space-between; letter-spacing: 2px; font-weight: 700; }
+.blink { animation: blink 1.2s step-end infinite; }
+@keyframes blink { 50% { opacity: 0.25; } }
+
+/* ============ 場景 3：找物件 ============ */
+#scene-hunt { background: linear-gradient(180deg, #191208 0%, #100b05 100%); }
+.hunt-hint { font-size: 13px; color: #9c8a5c; letter-spacing: 2px; text-align: center; margin: 12px 0 4px; line-height: 1.9; }
+.hunt-hint b { color: #e05a4a; }
+.table {
+    width: 100%; max-width: 400px; background: linear-gradient(170deg, #4a3218, #2c1c0c);
+    border-radius: 8px; padding: 22px 16px; margin-top: 14px;
+    box-shadow: inset 0 -8px 30px rgba(0,0,0,0.7), 0 8px 30px rgba(0,0,0,0.5);
+    border: 1px solid #5a421e;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+.item {
+    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.35); border: 1.5px solid #5a4522; border-radius: 6px;
+    cursor: pointer; transition: all 0.18s; position: relative; overflow: hidden;
+    padding: 8px;
+}
+.item:active { transform: scale(0.92); }
+.item .ico { font-size: 40px; filter: sepia(0.5) brightness(0.9); }
+.item .lbl { font-size: 10px; color: #a89868; letter-spacing: 1px; margin-top: 6px; text-align: center; line-height: 1.5; }
+.item:hover { border-color: #d4af37; }
+.item.shake { animation: shake 0.4s; border-color: #8a2a1a; }
+@keyframes shake { 0%,100% { transform: translateX(0);} 20% { transform: translateX(-7px);} 40% { transform: translateX(7px);} 60% { transform: translateX(-5px);} 80% { transform: translateX(5px);} }
+.item.glow-hit { border-color: #d4af37; box-shadow: 0 0 22px rgba(212,175,55,0.6); background: rgba(212,175,55,0.12); animation: hitPop 0.45s; }
+@keyframes hitPop { 0% { transform: scale(0.85);} 55% { transform: scale(1.1);} 100% { transform: scale(1);} }
+.item .badge-new {
+    position: absolute; top: 5px; right: 5px; background: #8a1a10; color: #f0e2b6;
+    font-size: 8.5px; padding: 2px 6px; border-radius: 2px; letter-spacing: 1px; font-weight: 800;
+}
+.hunt-msg {
+    min-height: 44px; margin-top: 14px; font-size: 14px; text-align: center;
+    color: #b8a87c; letter-spacing: 1px; line-height: 1.8; padding: 0 8px;
+}
+.hunt-msg.err { color: #e05a4a; font-weight: 700; }
+.hunt-msg.ok { color: #d4af37; font-weight: 700; }
+
+/* ============ 場景 4：密碼輸入 ============ */
+#scene-code { background: radial-gradient(ellipse at center, #1c1408 0%, #0e0a05 75%); }
+.code-card {
+    background: linear-gradient(160deg, rgba(58,42,16,0.4), rgba(18,12,5,0.7));
+    border: 1px solid #4a3a18; border-radius: 8px; padding: 30px 22px; max-width: 380px; width: 100%;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.55);
+    text-align: center;
+}
+.code-card .lock-ico { font-size: 44px; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); }
+.code-card .code-title { font-size: 15px; letter-spacing: 3px; color: #d4af37; font-weight: 800; }
+.code-card .code-sub { font-size: 12px; color: #9c8a5c; margin-top: 8px; line-height: 1.9; letter-spacing: 1px; }
+.code-dots { display: flex; justify-content: center; gap: 14px; margin: 26px 0 8px; }
+.code-dot {
+    width: 52px; height: 62px; border: 2px solid #6a5428; border-radius: 6px;
+    background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 900; color: #f0e2b6; font-family: "Cinzel", "Noto Serif TC", serif;
+    transition: all 0.15s;
+}
+.code-dot.filled { border-color: #d4af37; box-shadow: 0 0 14px rgba(212,175,55,0.35); }
+.code-dot.error { border-color: #e05a4a; animation: shake 0.4s; color: #e05a4a; }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+.key {
+    font-family: inherit; font-size: 21px; font-weight: 800; color: #f0e2b6;
+    background: linear-gradient(180deg, #3a2a10, #241a08);
+    border: 1.5px solid #5a4522; border-radius: 6px; padding: 13px 0; cursor: pointer;
+    transition: all 0.12s;
+}
+.key:active { transform: scale(0.93); background: linear-gradient(180deg, #4a3514, #2c1f0a); border-color: #d4af37; }
+.key.dim { color: #8a7538; font-size: 16px; }
+.key.enter { border-color: #8a1a10; color: #e8b0a0; grid-column: span 2; background: linear-gradient(180deg, #4a1c10, #2c0f06); }
+.code-msg { min-height: 40px; font-size: 13.5px; margin-top: 18px; color: #9c8a5c; letter-spacing: 1px; line-height: 1.9; }
+.code-msg.err { color: #e05a4a; font-weight: 700; }
+.code-msg.ok { color: #d4af37; font-weight: 700; }
+
+/* ============ 場景 5：出擊 ============ */
+#scene-launch {
+    background: radial-gradient(ellipse at 50% 40%, #2c1a08 0%, #140c05 55%, #0a0603 100%);
+}
+.launch-wings { width: 150px; height: 150px; filter: drop-shadow(0 0 30px rgba(212,175,55,0.6)); animation: wingRise 2s ease-out forwards; }
+@keyframes wingRise { 0% { transform: scale(0.3) rotate(-12deg); opacity: 0;} 60% { transform: scale(1.12) rotate(3deg); opacity: 1;} 100% { transform: scale(1) rotate(0deg); opacity: 1;} }
+.launch-title {
+    font-size: 44px; font-weight: 900; letter-spacing: 12px; color: #f0e2b6; margin-top: 20px;
+    text-shadow: 0 0 30px rgba(212,175,55,0.5), 0 4px 0 #3a2a10; animation: titleShake 1.2s ease-in-out infinite;
+}
+@keyframes titleShake { 0%,100% { transform: rotate(-1deg);} 50% { transform: rotate(1deg);} }
+.launch-line { font-size: 13px; letter-spacing: 4px; color: #9c8a5c; margin-top: 14px; }
+.launch-line b { color: #e05a4a; }
+.countdown { font-family: "Cinzel", serif; font-size: 22px; letter-spacing: 6px; color: #d4af37; margin-top: 18px; min-height: 34px; }
+
+/* 快速淡出 */
+.fadeout { animation: fadeout 0.5s forwards !important; }
+@keyframes fadeout { to { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="alarm-bg" id="alarm"></div>
+<div id="stage">
+
+    <!-- ═══════════ 場景 0：標題 ═══════════ -->
+    <section class="scene" id="scene-intro">
+        <svg class="wings-badge" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-label="自由之翼">
+            <defs>
+                <radialGradient id="shield" cx="50%" cy="40%">
+                    <stop offset="0%" stop-color="#3a5a8a"/><stop offset="100%" stop-color="#1a2c46"/>
+                </radialGradient>
+                <linearGradient id="wingG" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#f5e9c8"/><stop offset="100%" stop-color="#bfa86a"/>
+                </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="56" fill="#1a2c46" stroke="#d4af37" stroke-width="3"/>
+            <circle cx="60" cy="60" r="46" fill="none" stroke="#8a7538" stroke-width="1.5"/>
+            <!-- 左翼 -->
+            <path d="M58 52 C 40 26, 14 30, 4 52 C 18 52, 26 46, 30 40 C 34 56, 30 70, 58 72 Z" fill="url(#wingG)"/>
+            <!-- 右翼（鏡射） -->
+            <path d="M62 52 C 80 26, 106 30, 116 52 C 102 52, 94 46, 90 40 C 86 56, 90 70, 62 72 Z" fill="url(#wingG)"/>
+            <!-- 中央劍 -->
+            <path d="M60 34 L66 46 L64 84 L56 84 L54 46 Z" fill="#e0d4ae" stroke="#8a5a1a" stroke-width="1"/>
+            <circle cx="60" cy="40" r="3.5" fill="#d4af37"/>
+            <!-- 下緣飾帶 -->
+            <path d="M34 96 Q 60 108 86 96 L 84 102 Q 60 114 36 102 Z" fill="#d4af37"/>
+        </svg>
+        <h1 class="title">進擊的情人節</h1>
+        <div class="crest-line"></div>
+        <h2 class="subtitle">牆外特別調查任務</h2>
+        <p class="intro-quote">
+            「那一天，人類重新想起——<br>
+            被<b>巨人</b>支配的…恐懼，<br>
+            以及被囚禁在<b>牆內</b>的屈辱。」<br>
+            <span style="font-size:11px;color:#6b5a30;">—— 但這一次，是為了守護妳而戰。</span>
+        </p>
+        <button class="btn glow" id="btn-start">出 撃</button>
+    </section>
+
+    <!-- ═══════════ 場景 1：故事前言 ═══════════ -->
+    <section class="scene" id="scene-story">
+        <h1 class="title" style="font-size:22px;">任務簡報</h1>
+        <div class="divider"></div>
+        <div class="story-block">
+            <div class="story-card" id="scard-0">
+                <p>調查兵團的情報班，偵測到牆外出現了一隻<b class="gold">特異種巨人</b>——<br>「鎧之巨人」。</p>
+            </div>
+            <div class="story-card" id="scard-1">
+                <p>牠纏繞著神秘的<b class="gold">硬化鎧甲</b>，更可怕的是，牠身上寄宿著兩種詛咒：<br>
+                <span class="red">「視覺疲勞」</span>與<br><span class="red">「熬夜魔咒」</span>。</p>
+            </div>
+            <div class="story-card" id="scard-2">
+                <p>牠伸出巨掌，試圖奪走世間所有的<b class="gold">明亮與光彩</b>——<br>
+                讓天空失去顏色，讓節日失去歡笑。</p>
+            </div>
+            <div class="story-card" id="scard-3">
+                <p>情報顯示：「只有兼具<b class="gold">勇氣</b>與<b class="gold">專注力</b>的精銳戰士，<br>才能穿過牆外防線。」</p>
+            </div>
+            <div class="story-card" id="scard-4">
+                <p>而艾連——<br>已經在牆外為妳開闢了一條<b class="red">安全通道</b>，<br>
+                並將專屬的<b class="gold">「調查兵團機密通關密碼」</b>親手交到了妳的手中。</p>
+            </div>
+            <div class="story-card" id="scard-5">
+                <p class="small">妳必須親自登入立體機動系統，<br>
+                繞到巨人的<b>後頸</b>，發動精準斬擊！</p>
+            </div>
+            <div class="story-index" id="story-index">1 / 6</div>
+            <button class="btn" id="btn-story-next">繼 續</button>
+        </div>
+    </section>
+
+    <!-- ═══════════ 場景 2：情報頁 ═══════════ -->
+    <section class="scene" id="scene-intel">
+        <div class="intel-doc">
+            <div class="intel-head">
+                <div class="top">調 查 兵 團 ・ 極 密</div>
+                <h3>牆外特別調查任務</h3>
+                <div class="num">特別任務編號：VAL-0214「獻出心臟」作戰</div>
+            </div>
+            <div class="intel-body">
+                <p><b>■ 目標</b>：特異種巨人「鎧之巨人」（後頸弱點）</p>
+                <p><b>■ 作戰區域</b>：帕拉蒂島牆外・情人節防線</p>
+                <div class="key-line">
+                    ── 已知情報 ──<br>
+                    巨人身上纏繞著「視覺疲勞」與「熬夜魔咒」的詛咒光環，<br>
+                    一般攻擊<b>完全無效</b>。<br>
+                    只有<b>精準命中後頸</b>才能破除詛咒，奪回被奪走的光彩。
+                </div>
+                <p><b>■ 執行者</b>：僅限一位精銳戰士（通關密碼持有者）</p>
+                <p><b>■ 支援</b>：艾連・葉卡 — 已於牆外開闢安全通道</p>
+            </div>
+            <div class="intel-foot">
+                <span>調査兵団本部</span><span class="blink">■ 嚴禁外洩</span>
+            </div>
+        </div>
+        <button class="btn glow" id="btn-intel-next">領取任務物品</button>
+    </section>
+
+    <!-- ═══════════ 場景 3：找物件 ═══════════ -->
+    <section class="scene" id="scene-hunt">
+        <h1 class="title" style="font-size:20px;">尋找通關密碼</h1>
+        <p class="hunt-hint">艾連把密碼藏在桌上的某個物件裡 —<br>他說：<b>「交給妳的那封信。」</b></p>
+        <div class="table" id="item-table">
+            <div class="item" data-item="map"><div class="ico">🗺️</div><div class="lbl">牆外地形圖</div></div>
+            <div class="item" data-item="watch"><div class="ico">⏳</div><div class="lbl">懷錶</div></div>
+            <div class="item" data-item="letter"><div class="ico">✉️</div><div class="lbl">機密信封</div><div class="badge-new">極密</div></div>
+            <div class="item" data-item="scarf"><div class="ico">🧣</div><div class="lbl">紅圍巾</div></div>
+            <div class="item" data-item="blade"><div class="ico">🗡️</div><div class="lbl">立體機動刀刃</div></div>
+            <div class="item" data-item="goggles"><div class="ico">🔭</div><div class="lbl">調查望遠鏡</div></div>
+        </div>
+        <div class="hunt-msg" id="hunt-msg">點擊桌上的物件，找出線索……</div>
+    </section>
+
+    <!-- ═══════════ 場景 4：密碼輸入 ═══════════ -->
+    <section class="scene" id="scene-code">
+        <div class="code-card">
+            <div class="lock-ico">🔐</div>
+            <div class="code-title">機 密 解 鎖</div>
+            <div class="code-sub">
+                信封裡掉出了一張密碼卡：<br>
+                艾連的字跡寫著——<br>
+                <b style="color:#d4af37;">「記得我們的那一天。」</b>
+            </div>
+            <div class="code-dots" id="code-dots">
+                <div class="code-dot" id="dot-0">·</div>
+                <div class="code-dot" id="dot-1">·</div>
+                <div class="code-dot" id="dot-2">·</div>
+                <div class="code-dot" id="dot-3">·</div>
+            </div>
+            <div class="keypad" id="keypad"></div>
+            <div class="code-msg" id="code-msg"></div>
+        </div>
+    </section>
+
+    <!-- ═══════════ 場景 5：出擊 ═══════════ -->
+    <section class="scene" id="scene-launch">
+        <svg class="launch-wings" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-label="自由之翼">
+            <defs>
+                <linearGradient id="wingG2" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#f5e9c8"/><stop offset="100%" stop-color="#bfa86a"/>
+                </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="56" fill="#1a2c46" stroke="#d4af37" stroke-width="3"/>
+            <path d="M58 52 C 40 26, 14 30, 4 52 C 18 52, 26 46, 30 40 C 34 56, 30 70, 58 72 Z" fill="url(#wingG2)"/>
+            <path d="M62 52 C 80 26, 106 30, 116 52 C 102 52, 94 46, 90 40 C 86 56, 90 70, 62 72 Z" fill="url(#wingG2)"/>
+            <path d="M60 34 L66 46 L64 84 L56 84 L54 46 Z" fill="#e0d4ae" stroke="#8a5a1a" stroke-width="1"/>
+        </svg>
+        <div class="launch-title">出 撃 ！！</div>
+        <div class="launch-line">為牆內的<b>光明</b>與<b>笑容</b> — 獻出妳的心臟！</div>
+        <div class="launch-line" style="font-size:11px;letter-spacing:2px;color:#6b5a30;">艾連正在牆外等著妳</div>
+        <div class="countdown" id="countdown">3</div>
+        <button class="btn" id="btn-launch-now" style="display:none;">立即出撃</button>
+    </section>
+
+</div>
+
+<script>
+'use strict';
+/* ================= 場景管理 ================= */
+const scenes = ['scene-intro','scene-story','scene-intel','scene-hunt','scene-code','scene-launch'];
+let idx = 0;
+function showScene(i) {
+    idx = i;
+    scenes.forEach((id, k) => {
+        document.getElementById(id).classList.toggle('active', k === i);
+    });
+    document.getElementById('alarm').classList.toggle('on', i === 5 || i === 0);
+    window.scrollTo(0, 0);
+}
+
+/* ================= 場景 0：標題 → 故事 ================= */
+document.getElementById('btn-start').addEventListener('click', () => {
+    showScene(1);
+    revealCard(0);
+});
+
+/* ================= 場景 1：故事逐段顯示 ================= */
+const storyCards = [
+    'scard-0','scard-1','scard-2','scard-3','scard-4','scard-5'
+];
+let storyPos = -1;
+function revealCard(n) {
+    const el = document.getElementById(storyCards[n]);
+    el.classList.add('visible');
+    document.getElementById('story-index').textContent = (n + 1) + ' / ' + storyCards.length;
+    storyPos = n;
+    if (n === storyCards.length - 1) {
+        document.getElementById('btn-story-next').textContent = '取得情報';
+    }
+}
+document.getElementById('btn-story-next').addEventListener('click', () => {
+    if (storyPos < storyCards.length - 1) {
+        revealCard(storyPos + 1);
+    } else {
+        showScene(2);  // 情報頁
+    }
+});
+
+/* ================= 場景 2：情報 → 找物件 ================= */
+document.getElementById('btn-intel-next').addEventListener('click', () => {
+    showScene(3);
+    document.getElementById('hunt-msg').textContent = '點擊桌上的物件，找出線索……';
+});
+
+/* ================= 場景 3：找物件 ================= */
+const huntMsg = document.getElementById('hunt-msg');
+const wrongMsgs = [
+    '…沒有特別的線索。',
+    '艾連說不是這個。',
+    '再仔細想想——「信」。',
+    '這只是普通的物件。',
+];
+let wrongIdx = 0;
+document.querySelectorAll('.item').forEach(el => {
+    el.addEventListener('click', () => {
+        if (el.classList.contains('glow-hit')) return;
+        if (el.dataset.item === 'letter') {
+            // 找到機密信封
+            el.classList.add('glow-hit');
+            huntMsg.className = 'hunt-msg ok';
+            huntMsg.textContent = '✉️ 找到「機密信封」了！艾連的筆跡…裡面夾著一張密碼卡。';
+            setTimeout(() => {
+                showScene(4);
+                resetCode();
+            }, 1100);
+        } else {
+            el.classList.add('shake');
+            setTimeout(() => el.classList.remove('shake'), 450);
+            huntMsg.className = 'hunt-msg err';
+            huntMsg.textContent = wrongMsgs[wrongIdx % wrongMsgs.length];
+            wrongIdx++;
+        }
+    });
+});
+
+/* ================= 場景 4：密碼輸入（密碼 = 0226） ================= */
+const SECRET = '0226';
+let input = '';
+function resetCode() {
+    input = '';
+    document.querySelectorAll('.code-dot').forEach(d => { d.textContent = '·'; d.classList.remove('filled','error'); });
+    const msg = document.getElementById('code-msg');
+    msg.textContent = '';
+    msg.className = 'code-msg';
+}
+function renderDots() {
+    document.querySelectorAll('.code-dot').forEach((d, i) => {
+        d.textContent = i < input.length ? '●' : '·';
+        d.classList.toggle('filled', i < input.length);
+        d.classList.remove('error');
+    });
+}
+function buildKeypad() {
+    const pad = document.getElementById('keypad');
+    for (let n = 1; n <= 9; n++) {
+        const k = document.createElement('button');
+        k.className = 'key'; k.textContent = n;
+        k.addEventListener('click', () => pressKey(String(n)));
+        pad.appendChild(k);
+    }
+    const del = document.createElement('button');
+    del.className = 'key dim'; del.textContent = '⌫';
+    del.addEventListener('click', () => { input = input.slice(0, -1); renderDots(); });
+    pad.appendChild(del);
+    const zero = document.createElement('button');
+    zero.className = 'key'; zero.textContent = '0';
+    zero.addEventListener('click', () => pressKey('0'));
+    pad.appendChild(zero);
+    const enter = document.createElement('button');
+    enter.className = 'key enter'; enter.textContent = '解 鎖';
+    enter.addEventListener('click', checkCode);
+    pad.appendChild(enter);
+}
+function pressKey(n) {
+    if (input.length >= 4) return;
+    input += n;
+    renderDots();
+    if (input.length === 4) checkCode();
+}
+let tries = 0;
+function checkCode() {
+    if (input.length !== 4) return;
+    const msg = document.getElementById('code-msg');
+    if (input === SECRET) {
+        msg.className = 'code-msg ok';
+        msg.textContent = '✓ 機密解除。任務正式開始——';
+        document.querySelectorAll('.code-dot').forEach(d => d.classList.add('filled'));
+        setTimeout(() => { showScene(5); startLaunch(); }, 1200);
+    } else {
+        tries++;
+        document.querySelectorAll('.code-dot').forEach(d => d.classList.add('error'));
+        msg.className = 'code-msg err';
+        msg.textContent = tries === 1
+            ? '✗ 密碼錯誤。艾連的提示是：「那一天」。'
+            : '✗ 再想想…屬於你們的那一天。( ' + (3 - Math.min(tries, 2)) + ' 次機會 )';
+        setTimeout(() => {
+            resetCode();
+            if (tries >= 3) {
+                msg.className = 'code-msg ok';
+                msg.textContent = '💡 提示解鎖：艾連低語——「2 月 26 日」';
+                tries = 0;
+            }
+        }, 1000);
+    }
+}
+buildKeypad();
+
+/* ================= 場景 5：出擊倒數 → 進入遊戲 ================= */
+let countdown = 3;
+function startLaunch() {
+    const cd = document.getElementById('countdown');
+    cd.textContent = '3';
+    countdown = 3;
+    const timer = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+            cd.textContent = countdown;
+        } else {
+            clearInterval(timer);
+            cd.textContent = '⚔';
+            document.getElementById('btn-launch-now').style.display = 'block';
+        }
+    }, 1000);
+}
+function enterGame() {
+    const stage = document.getElementById('stage');
+    stage.classList.add('fadeout');
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 500);
+}
+document.getElementById('btn-launch-now').addEventListener('click', enterGame);
+
+/* ================= 初始化 ================= */
+showScene(0);
+</script>
+</body>
+</html>
